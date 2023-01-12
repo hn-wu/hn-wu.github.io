@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="美食点评网站之奖池领取一、背景一般来说，网站为了促进活跃度，一般都会去选择颁布一些活动，如何用户通过参与这些获得，获取奖励。 因此为了增加网站活跃度，所以我选择设定一个点赞活动，当用户发言数目达到设定的点赞数目时，就可以从奖励池中随机获取到一个奖励。 不过考虑到项目采用的是微服务架构，所以可能会在领取奖励时出现并发问题，例如用户A与用户B，同时达成了目标，并且随机到同一个奖励，正常情况应该是未抢到">
+<meta property="og:type" content="article">
+<meta property="og:title" content="美食点评网站之奖池领取">
+<meta property="og:url" content="http://example.com/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E5%A5%96%E6%B1%A0%E9%A2%86%E5%8F%96/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="美食点评网站之奖池领取一、背景一般来说，网站为了促进活跃度，一般都会去选择颁布一些活动，如何用户通过参与这些获得，获取奖励。 因此为了增加网站活跃度，所以我选择设定一个点赞活动，当用户发言数目达到设定的点赞数目时，就可以从奖励池中随机获取到一个奖励。 不过考虑到项目采用的是微服务架构，所以可能会在领取奖励时出现并发问题，例如用户A与用户B，同时达成了目标，并且随机到同一个奖励，正常情况应该是未抢到">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-05T06:50:24.000Z">
+<meta property="article:modified_time" content="2022-09-07T02:58:07.552Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="项目">
+<meta property="article:tag" content="分布式锁">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E5%A5%96%E6%B1%A0%E9%A2%86%E5%8F%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>美食点评网站之奖池领取 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E5%A5%96%E6%B1%A0%E9%A2%86%E5%8F%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          美食点评网站之奖池领取
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-09-05 14:50:24" itemprop="dateCreated datePublished" datetime="2022-09-05T14:50:24+08:00">2022-09-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-09-07 10:58:07" itemprop="dateModified" datetime="2022-09-07T10:58:07+08:00">2022-09-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99/" itemprop="url" rel="index"><span itemprop="name">美食点评网站</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="美食点评网站之奖池领取"><a href="#美食点评网站之奖池领取" class="headerlink" title="美食点评网站之奖池领取"></a>美食点评网站之奖池领取</h2><h4 id="一、背景"><a href="#一、背景" class="headerlink" title="一、背景"></a>一、背景</h4><p>一般来说，网站为了促进活跃度，一般都会去选择颁布一些活动，如何用户通过参与这些获得，获取奖励。</p>
+<p>因此为了增加网站活跃度，所以我选择设定一个点赞活动，当用户发言数目达到设定的点赞数目时，就可以从奖励池中随机获取到一个奖励。</p>
+<p>不过考虑到项目采用的是微服务架构，所以可能会在领取奖励时出现并发问题，例如用户A与用户B，同时达成了目标，并且随机到同一个奖励，正常情况应该是未抢到的人重新随机奖励，但实际上会出现A与B同时获得一个奖励的情况。</p>
+<p>因此，选择通过对奖励进行加锁的方式来避免这种情况，并且因为项目是采用分布式进行部署，不同进程之间进行资源加锁就只能采用分布式锁的形式。</p>
+<h4 id="二、技术实现"><a href="#二、技术实现" class="headerlink" title="二、技术实现"></a>二、技术实现</h4><p>一般来说，分布式锁的实现方式包括MySQL、Redis和ZooKeeper等等，由于项目中使用Redis情况较多，因此选择Redis来实现分布式锁</p>
+<h5 id="（一）分布式锁实现原理"><a href="#（一）分布式锁实现原理" class="headerlink" title="（一）分布式锁实现原理"></a>（一）分布式锁实现原理</h5><p>通过Redis中是否存在某个锁ID，就可以判断是否上锁。为了保证判断锁是否存在的原子性，保证只有一个线程获取同一把锁，Redis有<strong>SETNX</strong>（若存在key则不做处理，不存在则添加）和<strong>GETSET</strong>（先写新值，返回旧值，原子性操作，可以用于分辨是不是首次操作）操作。</p>
+<p>为了防止主机宕机或网络断开之后的死锁，Redis通过设置超时时间来规避，将当前时间戳设置为值，获取锁时判断是否过期</p>
+<p>Redis分布式锁的实现步骤</p>
+<ol>
+<li>线程A发送<code>SETNX 请求ID</code>尝试获得锁，如果锁不存在，则set并获得锁。 </li>
+<li>如果锁存在，则再判断锁是否过期，如果没过期，则等待一下再重试。 </li>
+<li>如果锁过期，用<code>GETSET 请求ID</code>来刷新时间戳，获取锁</li>
+<li>若B和C两个线程同时刷新时间戳， 并且在此之前，线程C快一步执行了上面的操作，那么B拿到的时间戳是个未超时的值，这时B就没有如期获得锁，需要再次等待或重试。</li>
+</ol>
+<h5 id="（二）分布式锁应用"><a href="#（二）分布式锁应用" class="headerlink" title="（二）分布式锁应用"></a>（二）分布式锁应用</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedisLockImpl</span> <span class="keyword">implements</span> <span class="title class_">RedisLock</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> RedisTemplate redisTemplate;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">final</span> <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> <span class="string">&quot;lock&quot;</span>;</span><br><span class="line">    <span class="comment">//300毫秒</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">long</span> <span class="variable">expire</span> <span class="operator">=</span> <span class="number">300L</span>;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">tryLock</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> (Boolean) redisTemplate.execute((RedisCallback) connection -&gt; &#123;</span><br><span class="line">            <span class="comment">//设置过期时间</span></span><br><span class="line">            <span class="type">long</span> <span class="variable">expireAt</span> <span class="operator">=</span> System.currentTimeMillis() + expire + <span class="number">1</span>;</span><br><span class="line">            <span class="type">Boolean</span> <span class="variable">flag</span> <span class="operator">=</span> </span><br><span class="line">                connection.setNX(key.getBytes(), </span><br><span class="line">                                 String.valueOf(expireAt).getBytes());  </span><br><span class="line">            <span class="keyword">if</span> (flag) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">                <span class="type">byte</span>[] value = connection.get(lock.getBytes());</span><br><span class="line">                <span class="keyword">if</span> (Objects.nonNull(value) &amp;&amp; value.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="type">long</span> <span class="variable">expireTime</span> <span class="operator">=</span> Long.parseLong(<span class="keyword">new</span> <span class="title class_">String</span>(value));</span><br><span class="line">                     <span class="comment">// 如果锁已经过期</span></span><br><span class="line">                    <span class="keyword">if</span> (expireTime &lt; System.currentTimeMillis()) &#123;</span><br><span class="line">                        expireAt = System.currentTimeMillis() + expire + <span class="number">1</span>;</span><br><span class="line">                        <span class="comment">// 重新加锁，防止死锁</span></span><br><span class="line">                        <span class="type">byte</span>[] oldValue = connection.</span><br><span class="line">                            getSet(key.getBytes(), </span><br><span class="line">                                   String.valueOf(expireAt).getBytes());</span><br><span class="line">                        </span><br><span class="line">                        <span class="keyword">return</span> Long.parseLong(<span class="keyword">new</span> <span class="title class_">String</span>(oldValue)) </span><br><span class="line">                            &lt; System.currentTimeMillis();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">releaseLock</span><span class="params">()</span> &#123;</span><br><span class="line">        stringRedisTemplate.delete(key);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://tech.meituan.com/2016/09/29/distributed-system-mutually-exclusive-idempotence-cerberus-gtis.html">分布式系统互斥性与幂等性问题的分析与解决</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jojop/p/14008824.html">利用 Redis 实现分布式锁</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%A1%B9%E7%9B%AE/" rel="tag"># 项目</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag"># 分布式锁</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E6%8E%92%E8%A1%8C%E6%A6%9C/" rel="prev" title="美食点评网站之排行榜">
+      <i class="fa fa-chevron-left"></i> 美食点评网站之排行榜
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/07/%E7%BC%93%E5%AD%98%E4%BB%8B%E7%BB%8D/" rel="next" title="缓存介绍">
+      缓存介绍 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E5%A5%96%E6%B1%A0%E9%A2%86%E5%8F%96"><span class="nav-number">1.</span> <span class="nav-text">美食点评网站之奖池领取</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF"><span class="nav-number">1.0.1.</span> <span class="nav-text">一、背景</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.0.2.</span> <span class="nav-text">二、技术实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">（一）分布式锁实现原理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%BA%94%E7%94%A8"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">（二）分布式锁应用</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

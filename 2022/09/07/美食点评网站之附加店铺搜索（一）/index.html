@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="美食点评网站之附加店铺搜索（一）一、背景网站可以根据用户当前定位，查询在一定范围内的店铺并按照评分进行排名 二、优化前技术实现 将店铺的位置坐标分为两个字段存放到数据库中，一个字段记录经度，另一个字段记录纬度  遍历所选地区内所有的餐厅获取其位置信息，然后计算是否符合距离要求。   三、优化后技术实现以上方式虽然可以实现查询附加店铺的功能，但如果所选地区存在店铺数量过多，那么查询效率就骤降，因此我">
+<meta property="og:type" content="article">
+<meta property="og:title" content="美食点评网站之附加店铺搜索（一）">
+<meta property="og:url" content="http://example.com/2022/09/07/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E9%99%84%E5%8A%A0%E5%BA%97%E9%93%BA%E6%90%9C%E7%B4%A2%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="美食点评网站之附加店铺搜索（一）一、背景网站可以根据用户当前定位，查询在一定范围内的店铺并按照评分进行排名 二、优化前技术实现 将店铺的位置坐标分为两个字段存放到数据库中，一个字段记录经度，另一个字段记录纬度  遍历所选地区内所有的餐厅获取其位置信息，然后计算是否符合距离要求。   三、优化后技术实现以上方式虽然可以实现查询附加店铺的功能，但如果所选地区存在店铺数量过多，那么查询效率就骤降，因此我">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdn.net/20170410084845277">
+<meta property="og:image" content="https://img-blog.csdn.net/20170410084847343">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210114234157200.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM2NDU2ODI3,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2022-09-07T06:06:14.000Z">
+<meta property="article:modified_time" content="2022-09-07T06:08:11.120Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="性能优化">
+<meta property="article:tag" content="项目">
+<meta property="article:tag" content="R树">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdn.net/20170410084845277">
+
+<link rel="canonical" href="http://example.com/2022/09/07/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E9%99%84%E5%8A%A0%E5%BA%97%E9%93%BA%E6%90%9C%E7%B4%A2%EF%BC%88%E4%B8%80%EF%BC%89/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>美食点评网站之附加店铺搜索（一） | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/07/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E9%99%84%E5%8A%A0%E5%BA%97%E9%93%BA%E6%90%9C%E7%B4%A2%EF%BC%88%E4%B8%80%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          美食点评网站之附加店铺搜索（一）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-07 14:06:14 / 修改时间：14:08:11" itemprop="dateCreated datePublished" datetime="2022-09-07T14:06:14+08:00">2022-09-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99/" itemprop="url" rel="index"><span itemprop="name">美食点评网站</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="美食点评网站之附加店铺搜索（一）"><a href="#美食点评网站之附加店铺搜索（一）" class="headerlink" title="美食点评网站之附加店铺搜索（一）"></a>美食点评网站之附加店铺搜索（一）</h2><h4 id="一、背景"><a href="#一、背景" class="headerlink" title="一、背景"></a>一、背景</h4><p>网站可以根据用户当前定位，查询在一定范围内的店铺并按照评分进行排名</p>
+<h4 id="二、优化前技术实现"><a href="#二、优化前技术实现" class="headerlink" title="二、优化前技术实现"></a>二、优化前技术实现</h4><ol>
+<li><p>将店铺的位置坐标分为两个字段存放到数据库中，一个字段记录经度，另一个字段记录纬度</p>
+</li>
+<li><p>遍历所选地区内所有的餐厅获取其位置信息，然后计算是否符合距离要求。</p>
+</li>
+</ol>
+<h4 id="三、优化后技术实现"><a href="#三、优化后技术实现" class="headerlink" title="三、优化后技术实现"></a>三、优化后技术实现</h4><p>以上方式虽然可以实现查询附加店铺的功能，但如果所选地区存在店铺数量过多，那么查询效率就骤降，因此我选择利用R树空间索引来进行优化</p>
+<h5 id="（一）什么是R树空间索引"><a href="#（一）什么是R树空间索引" class="headerlink" title="（一）什么是R树空间索引"></a>（一）什么是R树空间索引</h5><p>R树就是一棵用来存储高维数据的平衡树，它将B树的思想扩展到多维空间，采用了B树分割空间的思想，并在添加、删除操作时采用合并、分解结点的方法，保证树的平衡性。</p>
+<p>R树采用了一种称为MBR(Minimal Bounding Rectangle)的方法，在此我把它译作“<strong>最小边界矩形</strong>”。从叶子结点开始用矩形（rectangle）将空间框起来，结点越往上，框住的空间就越大，以此对空间进行分割</p>
+<p><img src="https://img-blog.csdn.net/20170410084845277"></p>
+<p>首先我们假设所有数据都是二维空间下的点，图中标志了R8&#x2F;R9&#x2F;R10区域中的数据，别把其所代表的不规则图形看成一个数据，而应该把它看作是多个数据组成的一个区域，我们用R8&#x2F;R9&#x2F;R10这些最小边界矩形去框住这个不规则区域。因此R树的15个叶子几点也就代表了最基本的15个最小矩形。</p>
+<p>之后就是自底向上操作，我们发现R8，R9，R10三个矩形距离最为靠近，因此就可以用一个更大的矩形R3恰好框住这3个矩形。同样道理，R11，R12被R4恰好框住，R13，R14被R恰好框住……所有最基本的最小边界矩形被框入更大的矩形中之后，再次迭代，用更大的框去框住这些矩形。</p>
+<p>如果用地图的例子来解释，那么餐厅代表的就是最基本的最小矩形，之后把相邻的餐厅划分到同一块区域，划分好所有餐厅之后，再把邻近的区域划分到更大的区域，划分完毕后再次进行更高层次的划分，直到划分为几个最大区域，这时候进行查找就方便许多了。</p>
+<h5 id="（二）R树结点的结构"><a href="#（二）R树结点的结构" class="headerlink" title="（二）R树结点的结构"></a>（二）R树结点的结构</h5><ol>
+<li><p><strong>最小外接矩形 Minimum Bounding Rectangle（MBR）</strong><br>由于二维及以上的空间数据大多都是不规则的，如果直接对其进行数据建模和数据运算则会比较复杂，所以引入MBR的概念：MBR即能够完全包裹住空间数据对象的最小矩形</p>
+</li>
+<li><p><strong>R Tree Node</strong><br>R树节点，节点中存储得有多个R Tree Entry，R树节点的MBR是包裹该节点里面所有Entry MBR的MBR</p>
+</li>
+<li><p><strong>R Tree Entry（R树节点中存储的数据对象）</strong></p>
+<ul>
+<li><p>非叶节点中的R Tree Entry存储的是指向其子节点的指针。</p>
+</li>
+<li><p>叶节点中的R Tree Entry存储的是指向具体数据的指针</p>
+</li>
+</ul>
+</li>
+</ol>
+<p><img src="https://img-blog.csdn.net/20170410084847343"></p>
+<h5 id="（三）R-树搜索"><a href="#（三）R-树搜索" class="headerlink" title="（三）R 树搜索"></a>（三）R 树搜索</h5><p>利用 R 树索引进行搜索需要给定一个<strong>搜索矩形</strong>（即空间范围查询），搜索算法会返回MBR与搜索矩形有<strong>交叠</strong>的数据，如下图搜索示例返回被R15包裹的空间数据和被R16包裹的空间数据。</p>
+<p><img src="https://img-blog.csdnimg.cn/20210114234157200.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM2NDU2ODI3,size_16,color_FFFFFF,t_70"></p>
+<p>具体搜索步骤如下</p>
+<ol>
+<li><p>从根节点开始，遍历R树节点并进行检查：</p>
+<ul>
+<li><p>如果当前检查节点是非叶节点，检查节点内的每一个MBR是否与搜索矩形相交，如果是，则继续检查该Entry指向的子节点，否则直接剪枝</p>
+</li>
+<li><p>如果当前检查节点是叶节点，检查节点内的每一个MBR是否与搜索矩形相交，如果是，则将该Entry指向的数据加入结果集，否则直接跳过该Entry</p>
+</li>
+</ul>
+</li>
+<li><p>遍历结束之后之间返回结果集即可</p>
+</li>
+</ol>
+<p>如上图的搜索示例，由于搜索矩形与根节点中R1的MBR就不相交，所以可以直接对R1及其子树进行剪枝，一下子就排除了R1，R3，R4，R5，R8，R9，R10，R11，R12，R13，R14这些Entry，避免了很多无效的搜索。<br>然后由于搜索矩形与根节点中R2的MBR相交，则继续对R2指向的子节点进行检查，R2子节点中的R6和R7的MBR都与搜索矩形相交，继续向下搜索，R15和R16与搜索矩形相交且处在叶节点，将R15和R16指向的数据加入结果集；R7指向的子节点中的R17，R18，R19都没有与搜索矩形相交叠，直接跳过，至此搜索完毕，返回结果集，结果集中包含R15和R16指向的数据。</p>
+<h5 id="（四）R树插入"><a href="#（四）R树插入" class="headerlink" title="（四）R树插入"></a>（四）R树插入</h5><p>R树的插入操作与B树的插入操作类似。当新的数据记录需要被添加入叶子结点时，若叶子结点溢出，就需要对叶子结点进行分裂操作。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Function：Insert</span><br><span class="line">描述：将新的记录条目E插入给定的R树中。</span><br><span class="line">I1：[为新记录找到合适插入的叶子结点]开始ChooseLeaf方法选择叶子结点L以放置记录E。</span><br><span class="line">I2：[添加新记录至叶子结点] 如果L有足够的空间来放置新的记录条目，则向L中添加E。如果没有足够的空间，则进行SplitNode方法以获得两个结点L与LL，这两个结点包含了所有原来叶子结点L中的条目与新条目E。</span><br><span class="line">I3：[将变换向上传递] 开始对结点L进行AdjustTree操作，如果进行了分裂操作，那么同时需要对LL进行AdjustTree操作。</span><br><span class="line">I4：[对树进行增高操作] 如果结点分裂，且该分裂向上传播导致了根结点的分裂，那么需要创建一个新的根结点，并且让它的两个孩子结点分别为原来那个根结点分裂后的两个结点。</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Function：ChooseLeaf</span><br><span class="line">描述：选择叶子结点以放置新条目E。</span><br><span class="line">CL1：[Initialize]设置N为根结点。</span><br><span class="line">CL2：[叶子结点的检查] 如果N为叶子结点，则直接返回N。</span><br><span class="line">CL3：[选择子树] 如果N不是叶子结点，则遍历N中的结点，找出添加E.I时扩张最小的结点，并把该结点定义为F。如果有多个这样的结点，那么选择面积最小的结点。</span><br><span class="line">CL4：[下降至叶子结点] 将N设为F，从CL2开始重复操作。</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Function：AdjustTree</span><br><span class="line">描述：叶子结点的改变向上传递至根结点以改变各个矩阵。在传递变换的过程中可能会产生结点的分裂。</span><br><span class="line">AT1：[初始化] 将N设为L。</span><br><span class="line">AT2：[检验是否完成] 如果N为根结点，则停止操作。</span><br><span class="line">AT3：[调整父结点条目的最小边界矩形] 设P为N的父节点，EN为指向在父节点P中指向N的条目。调整EN.I以保证所有在N中的矩形都被恰好包围。</span><br><span class="line">AT4：[向上传递结点分裂] 如果N有一个刚刚被分裂产生的结点NN，则创建一个指向NN的条目ENN。如果P有空间来存放ENN，则将ENN添加到P中。如果没有，则对P进行SplitNode操作以得到P和PP。</span><br><span class="line">AT5：[升高至下一级] 如果N等于L且发生了分裂，则把NN置为PP。从AT2开始重复操作</span><br></pre></td></tr></table></figure>
+
+<h5 id="（五）R树删除"><a href="#（五）R树删除" class="headerlink" title="（五）R树删除"></a>（五）R树删除</h5><p>R树的删除操作与B树的删除操作会有所不同，不过同B树一样，会涉及到压缩等操作。相信读者看完以下的伪代码之后会有所体会。R树的删除同样是比较复杂的，需要用到一些辅助函数来完成整个操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Function：Delete</span><br><span class="line">描述：将一条记录E从指定的R树中删除。</span><br><span class="line">D1：[找到含有记录的叶子结点] 使用FindLeaf方法找到包含有记录E的叶子结点L。如果搜索失败，则直接终止。</span><br><span class="line">D2：[删除记录] 将E从L中删除。</span><br><span class="line">D3：[传递记录] 对L使用CondenseTree操作</span><br><span class="line">D4：[缩减树] 当经过以上调整后，如果根结点只包含有一个孩子结点，则将这个唯一的孩子结点设为根结点。</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Function：FindLeaf</span><br><span class="line">描述：根结点为T，期望找到包含有记录E的叶子结点。</span><br><span class="line">FL1：[搜索子树] 如果T不是叶子结点，则检查每一条T中的条目F，找出与E所对应的矩形相重合的F(不必完全覆盖)。对于所有满足条件的F，对其指向的孩子结点进行FindLeaf操作，直到寻找到E或者所有条目均以被检查过。</span><br><span class="line">FL2：[搜索叶子结点以找到记录] 如果T是叶子结点，那么检查每一个条目是否有E存在，如果有则返回T。</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Function：CondenseTree</span><br><span class="line">描述：L为包含有被删除条目的叶子结点。如果L的条目数过少(小于要求的最小值m)，则必须将该叶子结点L从树中删除。经过这一删除操作，L中的剩余条目必须重新插入树中。此操作将一直重复直至到达根结点。同样，调整在此修改树的过程所经过的路径上的所有结点对应的矩形大小。</span><br><span class="line">CT1：[初始化] 令N为L。初始化一个用于存储被删除结点包含的条目的链表Q。</span><br><span class="line">CT2：[找到父条目] 如果N为根结点，那么直接跳转至CT6。否则令P为N 的父结点，令EN为P结点中存储的指向N的条目。</span><br><span class="line">CT3：[删除下溢结点] 如果N含有条目数少于m，则从P中删除EN，并把结点N中的条目添加入链表Q中。</span><br><span class="line">CT4：[调整覆盖矩形] 如果N没有被删除，则调整EN.I使得其对应矩形能够恰好覆盖N中的所有条目所对应的矩形。</span><br><span class="line">CT5：[向上一层结点进行操作] 令N等于P，从CT2开始重复操作。</span><br><span class="line">CT6：[重新插入孤立的条目] 所有在Q中的结点中的条目需要被重新插入。原来属于叶子结点的条目可以使用Insert操作进行重新插入，而那些属于非叶子结点的条目必须插入删除之前所在层的结点，以确保它们所指向的子树还处于相同的层。</span><br></pre></td></tr></table></figure>
+
+<h4 id="三、优化前后性能比较"><a href="#三、优化前后性能比较" class="headerlink" title="三、优化前后性能比较"></a>三、优化前后性能比较</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> com.whn.Constants;</span><br><span class="line"><span class="keyword">import</span> com.whn.Point;</span><br><span class="line"><span class="keyword">import</span> com.whn.RTree;</span><br><span class="line"><span class="keyword">import</span> com.whn.Rectangle;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Main</span> &#123;</span><br><span class="line">    <span class="comment">//随机店铺地址，范围为[0,rand);</span></span><br><span class="line">    <span class="keyword">static</span> ArrayList&lt;Point&gt; list1 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    <span class="comment">//随机人的位置，范围为[0,rand);</span></span><br><span class="line">    <span class="keyword">static</span> ArrayList&lt;Point&gt; list2 = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">static</span> <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> <span class="number">10000</span>;    <span class="comment">//多少次查询</span></span><br><span class="line">    <span class="keyword">static</span> <span class="type">int</span> <span class="variable">t</span> <span class="operator">=</span> <span class="number">10</span>;    <span class="comment">//人与店铺距离km</span></span><br><span class="line">    <span class="keyword">static</span> <span class="type">int</span> <span class="variable">rand</span> <span class="operator">=</span> <span class="number">20000</span>;    <span class="comment">//店铺所在范围大小km</span></span><br><span class="line">    <span class="keyword">static</span> <span class="type">int</span> <span class="variable">count</span> <span class="operator">=</span> <span class="number">500000</span>; <span class="comment">//店铺数目</span></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; count; i++) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">x</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>().nextInt(rand);</span><br><span class="line">            <span class="type">int</span> <span class="variable">y</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>().nextInt(rand);</span><br><span class="line">            list1.add(<span class="keyword">new</span> <span class="title class_">Point</span>(String.valueOf(i),<span class="keyword">new</span> <span class="title class_">int</span>[]&#123;x,y&#125;));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//个人位置</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">x</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>().nextInt(rand);</span><br><span class="line">            <span class="type">int</span> <span class="variable">y</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>().nextInt(rand);</span><br><span class="line">            list2.add(<span class="keyword">new</span> <span class="title class_">Point</span>(<span class="keyword">new</span> <span class="title class_">int</span>[]&#123;x,y&#125;));</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(<span class="string">&quot;随机数据构建完成&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">startTime1</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        before();</span><br><span class="line">        <span class="type">long</span> <span class="variable">endTime1</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;优化前代码运行时间：&quot;</span> + (endTime1 - startTime1) + <span class="string">&quot;ms&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">long</span> <span class="variable">startTime2</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        <span class="type">RTree</span> <span class="variable">rTree</span> <span class="operator">=</span> build();</span><br><span class="line">        <span class="type">long</span> <span class="variable">endTime2</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;构建树运行时间：&quot;</span> + (endTime2 - startTime2) + <span class="string">&quot;ms&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">long</span> <span class="variable">startTime3</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        after(rTree);</span><br><span class="line">        <span class="type">long</span> <span class="variable">endTime3</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;优化后代码运行时间：&quot;</span> + (endTime3 - startTime3) + <span class="string">&quot;ms&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//优化前代码 查询100次</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">before</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">target</span> <span class="operator">=</span> t^<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">x1</span> <span class="operator">=</span> list2.get(<span class="number">0</span>).getIntCoordinate(<span class="number">0</span>);</span><br><span class="line">            <span class="type">int</span> <span class="variable">y1</span> <span class="operator">=</span> list2.get(<span class="number">0</span>).getIntCoordinate(<span class="number">1</span>);</span><br><span class="line">            HashSet&lt;String&gt; set = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">            <span class="keyword">for</span>(Point point:list1)&#123;</span><br><span class="line">                <span class="type">String</span> <span class="variable">id</span> <span class="operator">=</span> point.getId();</span><br><span class="line">                <span class="type">int</span> <span class="variable">x2</span> <span class="operator">=</span> point.getIntCoordinate(<span class="number">0</span>);</span><br><span class="line">                <span class="type">int</span> <span class="variable">y2</span> <span class="operator">=</span> point.getIntCoordinate(<span class="number">1</span>);</span><br><span class="line">                <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> (x1 - x2)^<span class="number">2</span> + (y1 - y2)^<span class="number">2</span>;</span><br><span class="line">                <span class="keyword">if</span> (len == target)&#123;</span><br><span class="line">                    set.add(id);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">after</span><span class="params">(RTree rTree)</span>&#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">target</span> <span class="operator">=</span> t/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">x1</span> <span class="operator">=</span> list2.get(<span class="number">0</span>).getIntCoordinate(<span class="number">0</span>);</span><br><span class="line">            <span class="type">int</span> <span class="variable">y1</span> <span class="operator">=</span> list2.get(<span class="number">0</span>).getIntCoordinate(<span class="number">1</span>);</span><br><span class="line">            <span class="type">Point</span> <span class="variable">p1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Point</span>(<span class="keyword">new</span> <span class="title class_">int</span>[]&#123;Math.min(<span class="number">0</span>,x1-target),Math.min(<span class="number">0</span>,y1-target)&#125;);</span><br><span class="line">            <span class="type">Point</span> <span class="variable">p2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Point</span>(<span class="keyword">new</span> <span class="title class_">int</span>[]&#123;Math.max(<span class="number">999</span>,x1+target),Math.min(<span class="number">999</span>,y1+target)&#125;);</span><br><span class="line">            List&lt;Rectangle&gt; search = rTree.search(<span class="keyword">new</span> <span class="title class_">Rectangle</span>(p1, p2));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> RTree <span class="title function_">build</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="type">RTree</span> <span class="variable">tree</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RTree</span>(<span class="number">4</span>, <span class="number">0.4f</span>, Constants.RTREE_QUADRATIC, <span class="number">2</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; list1.size(); i += <span class="number">2</span>) &#123;</span><br><span class="line">            <span class="type">Point</span> <span class="variable">p1</span> <span class="operator">=</span> list1.get(i);</span><br><span class="line">            <span class="type">Point</span> <span class="variable">p2</span> <span class="operator">=</span> list1.get(i+<span class="number">1</span>);</span><br><span class="line">            <span class="type">Rectangle</span> <span class="variable">rectangle</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Rectangle</span>(p1, p2);</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> <span class="number">0</span>; j &lt; p1.getDimension(); j++) &#123;</span><br><span class="line">                <span class="keyword">if</span> (p1.getIntCoordinate(j) &gt; p2.getIntCoordinate(j)) &#123;</span><br><span class="line">                    rectangle = <span class="keyword">new</span> <span class="title class_">Rectangle</span>(p2, p1);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            tree.insert(rectangle);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> tree;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">运行结果：</span><br><span class="line">随机数据构建完成</span><br><span class="line">优化前代码运行时间：49337ms</span><br><span class="line">构建树运行时间：3197ms</span><br><span class="line">优化后代码运行时间：7413ms</span><br></pre></td></tr></table></figure>
+
+<h4 id="四、R树实现代码"><a href="#四、R树实现代码" class="headerlink" title="四、R树实现代码"></a>四、R树实现代码</h4><p>实现代码放在第二篇了</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://dl.acm.org/doi/abs/10.1145/602259.602266">https://dl.acm.org/doi/abs/10.1145/602259.602266</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_18298439/article/details/96278997">https://blog.csdn.net/qq_18298439/article/details/96278997</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/wzf1993/article/details/79547037">https://blog.csdn.net/wzf1993/article/details/79547037</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_39889487/article/details/114075416">https://blog.csdn.net/weixin_39889487/article/details/114075416</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_36456827/article/details/112632540">https://blog.csdn.net/qq_36456827/article/details/112632540</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag"># 性能优化</a>
+              <a href="/tags/%E9%A1%B9%E7%9B%AE/" rel="tag"># 项目</a>
+              <a href="/tags/R%E6%A0%91/" rel="tag"># R树</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/07/%E7%BC%93%E5%AD%98%E4%BB%8B%E7%BB%8D/" rel="prev" title="缓存介绍">
+      <i class="fa fa-chevron-left"></i> 缓存介绍
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/07/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E9%99%84%E5%8A%A0%E5%BA%97%E9%93%BA%E6%90%9C%E7%B4%A2%EF%BC%88%E4%BA%8C%EF%BC%89/" rel="next" title="美食点评网站之附加店铺搜索（二）">
+      美食点评网站之附加店铺搜索（二） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E9%99%84%E5%8A%A0%E5%BA%97%E9%93%BA%E6%90%9C%E7%B4%A2%EF%BC%88%E4%B8%80%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">美食点评网站之附加店铺搜索（一）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF"><span class="nav-number">1.0.1.</span> <span class="nav-text">一、背景</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BC%98%E5%8C%96%E5%89%8D%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.0.2.</span> <span class="nav-text">二、优化前技术实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%BC%98%E5%8C%96%E5%90%8E%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.0.3.</span> <span class="nav-text">三、优化后技术实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E4%BB%80%E4%B9%88%E6%98%AFR%E6%A0%91%E7%A9%BA%E9%97%B4%E7%B4%A2%E5%BC%95"><span class="nav-number">1.0.3.1.</span> <span class="nav-text">（一）什么是R树空间索引</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89R%E6%A0%91%E7%BB%93%E7%82%B9%E7%9A%84%E7%BB%93%E6%9E%84"><span class="nav-number">1.0.3.2.</span> <span class="nav-text">（二）R树结点的结构</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89R-%E6%A0%91%E6%90%9C%E7%B4%A2"><span class="nav-number">1.0.3.3.</span> <span class="nav-text">（三）R 树搜索</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89R%E6%A0%91%E6%8F%92%E5%85%A5"><span class="nav-number">1.0.3.4.</span> <span class="nav-text">（四）R树插入</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89R%E6%A0%91%E5%88%A0%E9%99%A4"><span class="nav-number">1.0.3.5.</span> <span class="nav-text">（五）R树删除</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%BC%98%E5%8C%96%E5%89%8D%E5%90%8E%E6%80%A7%E8%83%BD%E6%AF%94%E8%BE%83"><span class="nav-number">1.0.4.</span> <span class="nav-text">三、优化前后性能比较</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E3%80%81R%E6%A0%91%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81"><span class="nav-number">1.0.5.</span> <span class="nav-text">四、R树实现代码</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

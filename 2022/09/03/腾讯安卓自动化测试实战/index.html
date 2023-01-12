@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一、自动化测试框架及应用领域综述（一）自动化测试框架执行流程 获取坐标或控件并模拟用户操作 对结果进行判断（截图比较、控件状态比较、日志分析） 测试报告的产出  （二）移动端自动化测试应用场景 性能测试 稳定性测试 功能测试 兼容性测试 接口测试 单元测试 线上监控测试  二、Monkey基本原理及扩展应用（一）Monkey介绍Monkey是Google提供的一个命令行工具，可运行在模拟器或实际设">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《腾讯安卓自动化测试实战》">
+<meta property="og:url" content="http://example.com/2022/09/03/%E8%85%BE%E8%AE%AF%E5%AE%89%E5%8D%93%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="一、自动化测试框架及应用领域综述（一）自动化测试框架执行流程 获取坐标或控件并模拟用户操作 对结果进行判断（截图比较、控件状态比较、日志分析） 测试报告的产出  （二）移动端自动化测试应用场景 性能测试 稳定性测试 功能测试 兼容性测试 接口测试 单元测试 线上监控测试  二、Monkey基本原理及扩展应用（一）Monkey介绍Monkey是Google提供的一个命令行工具，可运行在模拟器或实际设">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T08:43:30.000Z">
+<meta property="article:modified_time" content="2022-09-03T08:44:56.147Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="安卓">
+<meta property="article:tag" content="自动化测试">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/09/03/%E8%85%BE%E8%AE%AF%E5%AE%89%E5%8D%93%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E5%AE%9E%E6%88%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>《腾讯安卓自动化测试实战》 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/03/%E8%85%BE%E8%AE%AF%E5%AE%89%E5%8D%93%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E5%AE%9E%E6%88%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《腾讯安卓自动化测试实战》
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-03 16:43:30 / 修改时间：16:44:56" itemprop="dateCreated datePublished" datetime="2022-09-03T16:43:30+08:00">2022-09-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%B9%A6%E7%B1%8D%E8%AE%B0%E5%BD%95/" itemprop="url" rel="index"><span itemprop="name">书籍记录</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="一、自动化测试框架及应用领域综述"><a href="#一、自动化测试框架及应用领域综述" class="headerlink" title="一、自动化测试框架及应用领域综述"></a>一、自动化测试框架及应用领域综述</h4><h5 id="（一）自动化测试框架执行流程"><a href="#（一）自动化测试框架执行流程" class="headerlink" title="（一）自动化测试框架执行流程"></a>（一）自动化测试框架执行流程</h5><ol>
+<li>获取坐标或控件并模拟用户操作</li>
+<li>对结果进行判断（截图比较、控件状态比较、日志分析）</li>
+<li>测试报告的产出</li>
+</ol>
+<h5 id="（二）移动端自动化测试应用场景"><a href="#（二）移动端自动化测试应用场景" class="headerlink" title="（二）移动端自动化测试应用场景"></a>（二）移动端自动化测试应用场景</h5><ol>
+<li>性能测试</li>
+<li>稳定性测试</li>
+<li>功能测试</li>
+<li>兼容性测试</li>
+<li>接口测试</li>
+<li>单元测试</li>
+<li>线上监控测试</li>
+</ol>
+<h4 id="二、Monkey基本原理及扩展应用"><a href="#二、Monkey基本原理及扩展应用" class="headerlink" title="二、Monkey基本原理及扩展应用"></a>二、Monkey基本原理及扩展应用</h4><h5 id="（一）Monkey介绍"><a href="#（一）Monkey介绍" class="headerlink" title="（一）Monkey介绍"></a>（一）Monkey介绍</h5><p>Monkey是Google提供的一个命令行工具，可运行在模拟器或实际设备中。它向系统发送伪随机的用户事件，模拟用户的按键输入、触摸屏输入、手势输入等，从而对正在运行的应用程序进行压力测试，目的是看设备多长时间会出现异常，并观察系统的稳定性和容错性能。</p>
+<h5 id="（二）Monkey启动的命令行脚本"><a href="#（二）Monkey启动的命令行脚本" class="headerlink" title="（二）Monkey启动的命令行脚本"></a>（二）Monkey启动的命令行脚本</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// options表示Monkey执行的可配置参数，是可选项</span><br><span class="line">// count表示Monkey执行的事件数，为必选项。</span><br><span class="line">monkey [options] &lt;count&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Options参数类别</p>
+<ol>
+<li>基本配置类参数</li>
+<li>事件类型和频率参数</li>
+<li>约束限制类参数</li>
+<li>调试类参数</li>
+<li>官方隐藏类参数</li>
+</ol>
+<h5 id="（三）Monkey事件"><a href="#（三）Monkey事件" class="headerlink" title="（三）Monkey事件"></a>（三）Monkey事件</h5><p>触摸事件、手势事件、二指缩放事件、轨迹事件、屏幕旋转事件、基本导航事件、主要导航事件、系统按键事件、启动Activity事件、键盘事件、其他类型事件</p>
+<h5 id="（四）Monkey测试实例"><a href="#（四）Monkey测试实例" class="headerlink" title="（四）Monkey测试实例"></a>（四）Monkey测试实例</h5><p>情况一：常规稳定性测试</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">adb  shell  monkey  </span><br><span class="line">//使用-p参数来制定测试应用的包名（Package）</span><br><span class="line">-p  com.xxx.xxx  </span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">--pct-touch  40  </span><br><span class="line">--pct-motion  25  </span><br><span class="line">--pct-appswitch  10  </span><br><span class="line">--pct-rotation  5</span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">-s  12358</span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">--throttle  400  </span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">--ignore-crashes</span><br><span class="line">//使用-v指定log的详细级别</span><br><span class="line">--ignore-timeouts</span><br><span class="line">-v 500000</span><br></pre></td></tr></table></figure>
+
+<p>情况二：自定义脚本的稳定性测试</p>
+<p>常规Monkey测试执行的是随机的事件流，如果想让Monkey测试某个特定场景（执行固定的事件流），这时候就需要用到自定义脚本</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">头文件，控制Monkey发送消息的参数，固定写即可</span>        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">脚本类型，一般不用更改</span>        </span><br><span class="line">type=raw events        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">脚本执行次数，但是由于Monkey命令本身可以指定执行次数，所以这里的设置是不生效的        count=10</span>        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">命令执行速率，速率也可以通过Monkey命令设置，这里的设置是不生效的</span>        </span><br><span class="line">speed=1.0        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">以下为Monkey命令</span>        </span><br><span class="line">start data&gt;&gt;        </span><br><span class="line">LaunchActivity（pkg_name, cl_name）        </span><br><span class="line">DispatchPress(KEYCODE_HOME)        …</span><br></pre></td></tr></table></figure>
+
+<p>情况三：结合辅助命令，获取更多信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">//logcat日志信息</span><br><span class="line">adb shell logcat -v time&gt;log.txt</span><br><span class="line">//内存信息</span><br><span class="line">adb shell dumpsys meminfo &lt;进程名&gt;</span><br><span class="line">//CPU消耗信息</span><br><span class="line">adb shell top -n 1 |find“进程名”</span><br><span class="line">//电量信息</span><br><span class="line">adb shell dumpsys battery</span><br><span class="line">//GPU信息</span><br><span class="line">adb shell dumpsys gfxinfo &lt;进程名&gt;</span><br><span class="line">//流量信息</span><br><span class="line">adb shell cat/proc/uid_stat/&lt;被测应用的uid&gt;/tcp_rcv</span><br></pre></td></tr></table></figure>
+
+<h5 id="（五）Monkey原理"><a href="#（五）Monkey原理" class="headerlink" title="（五）Monkey原理"></a>（五）Monkey原理</h5><p>见书</p>
+<h4 id="三、Appium框架解析及实践"><a href="#三、Appium框架解析及实践" class="headerlink" title="三、Appium框架解析及实践"></a>三、Appium框架解析及实践</h4><h5 id="（一）Appium介绍"><a href="#（一）Appium介绍" class="headerlink" title="（一）Appium介绍"></a>（一）Appium介绍</h5><p>Appium是一个开源的、跨平台的自动化测试框架，该框架适用于Native Application、Mobile Web Application或Hybrid Application的自动化测试</p>
+<h5 id="（二）Appium原理"><a href="#（二）Appium原理" class="headerlink" title="（二）Appium原理"></a>（二）Appium原理</h5><p>Appium是在手机操作系统自带的测试框架基础上实现的</p>
+<ol>
+<li>Android（版本&gt;4.2）:UIAutomator</li>
+<li>Android（版本≤4.2）:Selendroid</li>
+<li>iOS：UIAutomation</li>
+</ol>
+<h5 id="（三）Appium组成"><a href="#（三）Appium组成" class="headerlink" title="（三）Appium组成"></a>（三）Appium组成</h5><p>Appium由客户端（Appium Client）和服务器（Appium Server）两部分组成，客户端与服务器端之间通过JSON Wire Protocol进行通信。</p>
+<p>（1）Appium服务器。Appium服务器是Appium框架的核心。它是一个基于Node.js实现的HTTP服务器。Appium服务器的主要功能是接受从Appium客户端发起的连接，监听从客户端发送来的命令，将命令发送给bootstrap.jar（iOS手机为bootstrap.js）执行，并将命令的执行结果通过HTTP应答反馈给Appium客户端。</p>
+<p>（2）Bootstrap.jar。Bootstrap.jar是在Android手机上运行的一个应用程序，它在手机上扮演TCP服务器的角色。当Appium服务器需要运行命令时，Appium服务器会与Bootstrap. jar建立TCP通信，并把命令发送给Bootstrap.jar; Bootstrap.jar负责运行测试命令。</p>
+<p>（3）Appium客户端。它主要是指实现了Appium功能的WebDriver协议的客户端Library，它负责与Appium服务器建立连接，并将测试脚本的指令发送到Appium服务器。现有的客户端Library有多种语言的实现，包括Ruby、Python、Java、JavaScript（Node. js）、Object C、PHP和C#。Appium的测试是在这些Library的基础上进行开发的。</p>
+<p>（4）Session。Appium的客户端和服务端之间进行通信都必须在一个Session的上下文中进行。客户端在发起通信的时候首先会发送一个叫作“Desired Capabilities”的JSON对象给服务器。服务器收到该数据后，会创建一个session并将session的ID返回到客户端。之后客户端可以用该session的ID发送后续的命令。</p>
+<p>（5）Desired Capabilities。Desired Capabilities是一组设置的键值对的集合，其中键对应设置的名称，而值对应设置的值。Desired Capabilities主要用于通知Appium服务器建立需要的Session，其中一些设置可以在Appium运行过程中改变Appium服务器的运行行为</p>
+<h5 id="（三）Appium优缺点"><a href="#（三）Appium优缺点" class="headerlink" title="（三）Appium优缺点"></a>（三）Appium优缺点</h5><p>优点：</p>
+<ol>
+<li>Appium支持多种应用程序的测试。可以测试移动Native App、Hybrid App和Web App。</li>
+<li>被测试的应用程序不需要特殊编译。Appium的测试对象一般不需要做特殊修改，如不需要引入任何额外的测试SDK，不需要添加任何的权限，也不要求被测程序与脚本的签名一致，所以可以直接对发布的程序进行测试，但Hybrid App测试可能需要做一点儿修改</li>
+<li>Appium的脚本不限制语言和工具。由于Appium的客户端支持多种测试语言，测试人员可以选择熟悉的语言开发测试脚本，而其他的测试工具一般只能使用特定的语言。</li>
+<li>Appium支持应用之间跳转的测试。它可以用于测试多个应用程序相互交户的场景。</li>
+<li>Appium是一个跨平台的测试框架，可以使用同一个API开发出在Android和iOS上都可以运行的脚本。</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li>该工具必须连接电脑才能实施自动化测试，遇到需要脱机执行的场景就不能满足需求，如电池测试。</li>
+<li>该工具只能用于UI的自动化测试，在很多情况下测试验证只能通过界面来进行。</li>
+</ol>
+<h5 id="（四）Appium运行中的问题"><a href="#（四）Appium运行中的问题" class="headerlink" title="（四）Appium运行中的问题"></a>（四）Appium运行中的问题</h5><p><strong>情况一：</strong></p>
+<p>用例运行时受前一个用例运行的影响，程序状态不正确导致测试脚本运行错误。最常遇到的是前一个脚本异常退出，Session还没有正常结束，可能导致后面用例在建立Session时失败。</p>
+<p>解决方法：首先，用例之间不相互耦合，每一个用例都是一个可独立运行的方法，不依赖任何其他的用例。其次，每个测试脚本都从程序启动状态开始运行，因为中间状态不能确保正确。如果用例会对程序有一些设置，那么每个用例结束后将设置状态恢复到初始状态。最后，在setUp和tearDown方法中初始化与断开Appium的连接，保证Appium服务器是一个清洁的环境。</p>
+<p><strong>情况二：</strong></p>
+<p>脚本包含多个用例，如果用例查找控件失败，则会抛出异常，导致整个脚本都退出了，后续用例将不能正常运行。例如，在刚开始的时候脚本没有做任何异常捕获，当用例出现异常时直接就中断了该脚本的运行，后面的用例就不可能再被运行了。</p>
+<p>笔者的解决方法是将每一个测试脚本的代码都包含在try-except中，保证测试脚本中的异常都能被每个用例捕获，即使当前用例失败了，后续用例也可以正常运行</p>
+<p><strong>情况三：</strong></p>
+<p>在程序运行过程中，未预期的消息框弹出，导致测试脚本运行出错。例如我们比较容易遇到启动地图时提示用户需要开启Wi-Fi或者GPS的情况。</p>
+<p>只能尽量保证测试环境的清洁，在setUp方法中就将Wi-Fi和GPS打开，并在启动地图后稍作等待，然后判断是否存在Dialog，有则清除掉，降低这类问题出现的概率。</p>
+<h4 id="四、安卓-APP速度测试"><a href="#四、安卓-APP速度测试" class="headerlink" title="四、安卓 APP速度测试"></a>四、安卓 APP速度测试</h4><p>见书</p>
+<h4 id="五、BVT测试实例"><a href="#五、BVT测试实例" class="headerlink" title="五、BVT测试实例"></a>五、BVT测试实例</h4><p>见书</p>
+<h4 id="六、兼容性测试实践"><a href="#六、兼容性测试实践" class="headerlink" title="六、兼容性测试实践"></a>六、兼容性测试实践</h4><h5 id="（一）兼容性测试介绍"><a href="#（一）兼容性测试介绍" class="headerlink" title="（一）兼容性测试介绍"></a>（一）兼容性测试介绍</h5><p>兼容性测试主要是指测试Android应用的功能，在市面上所有的Android设备上能否正常运行</p>
+<h5 id="（二）手工测试"><a href="#（二）手工测试" class="headerlink" title="（二）手工测试"></a>（二）手工测试</h5><p>见书</p>
+<h5 id="（三）自动化测试"><a href="#（三）自动化测试" class="headerlink" title="（三）自动化测试"></a>（三）自动化测试</h5><ol>
+<li>安装卸载</li>
+<li>稳定性测试（控件遍历、Monkey随机测试）</li>
+<li>功能测试（自动化+人工验证）</li>
+</ol>
+<h5 id="（四）云平台测试"><a href="#（四）云平台测试" class="headerlink" title="（四）云平台测试"></a>（四）云平台测试</h5>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%AE%89%E5%8D%93/" rel="tag"># 安卓</a>
+              <a href="/tags/%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95/" rel="tag"># 自动化测试</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/08/30/%E6%8B%A6%E6%88%AA%E5%99%A8%E5%92%8C%E8%BF%87%E6%BB%A4%E5%99%A8/" rel="prev" title="拦截器和过滤器">
+      <i class="fa fa-chevron-left"></i> 拦截器和过滤器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/03/CMS%E5%92%8CG1%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" rel="next" title="CMS和G1垃圾收集器">
+      CMS和G1垃圾收集器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E5%8F%8A%E5%BA%94%E7%94%A8%E9%A2%86%E5%9F%9F%E7%BB%BC%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">一、自动化测试框架及应用领域综述</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">1.1.</span> <span class="nav-text">（一）自动化测试框架执行流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.2.</span> <span class="nav-text">（二）移动端自动化测试应用场景</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Monkey%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86%E5%8F%8A%E6%89%A9%E5%B1%95%E5%BA%94%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">二、Monkey基本原理及扩展应用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89Monkey%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.1.</span> <span class="nav-text">（一）Monkey介绍</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89Monkey%E5%90%AF%E5%8A%A8%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%84%9A%E6%9C%AC"><span class="nav-number">2.2.</span> <span class="nav-text">（二）Monkey启动的命令行脚本</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89Monkey%E4%BA%8B%E4%BB%B6"><span class="nav-number">2.3.</span> <span class="nav-text">（三）Monkey事件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89Monkey%E6%B5%8B%E8%AF%95%E5%AE%9E%E4%BE%8B"><span class="nav-number">2.4.</span> <span class="nav-text">（四）Monkey测试实例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89Monkey%E5%8E%9F%E7%90%86"><span class="nav-number">2.5.</span> <span class="nav-text">（五）Monkey原理</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81Appium%E6%A1%86%E6%9E%B6%E8%A7%A3%E6%9E%90%E5%8F%8A%E5%AE%9E%E8%B7%B5"><span class="nav-number">3.</span> <span class="nav-text">三、Appium框架解析及实践</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89Appium%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.1.</span> <span class="nav-text">（一）Appium介绍</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89Appium%E5%8E%9F%E7%90%86"><span class="nav-number">3.2.</span> <span class="nav-text">（二）Appium原理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89Appium%E7%BB%84%E6%88%90"><span class="nav-number">3.3.</span> <span class="nav-text">（三）Appium组成</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89Appium%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-number">3.4.</span> <span class="nav-text">（三）Appium优缺点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89Appium%E8%BF%90%E8%A1%8C%E4%B8%AD%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">3.5.</span> <span class="nav-text">（四）Appium运行中的问题</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%AE%89%E5%8D%93-APP%E9%80%9F%E5%BA%A6%E6%B5%8B%E8%AF%95"><span class="nav-number">4.</span> <span class="nav-text">四、安卓 APP速度测试</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%94%E3%80%81BVT%E6%B5%8B%E8%AF%95%E5%AE%9E%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">五、BVT测试实例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%85%BC%E5%AE%B9%E6%80%A7%E6%B5%8B%E8%AF%95%E5%AE%9E%E8%B7%B5"><span class="nav-number">6.</span> <span class="nav-text">六、兼容性测试实践</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%85%BC%E5%AE%B9%E6%80%A7%E6%B5%8B%E8%AF%95%E4%BB%8B%E7%BB%8D"><span class="nav-number">6.1.</span> <span class="nav-text">（一）兼容性测试介绍</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%89%8B%E5%B7%A5%E6%B5%8B%E8%AF%95"><span class="nav-number">6.2.</span> <span class="nav-text">（二）手工测试</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95"><span class="nav-number">6.3.</span> <span class="nav-text">（三）自动化测试</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E4%BA%91%E5%B9%B3%E5%8F%B0%E6%B5%8B%E8%AF%95"><span class="nav-number">6.4.</span> <span class="nav-text">（四）云平台测试</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

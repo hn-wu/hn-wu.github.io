@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="IO多路复用一、select它仅仅知道了，有I&#x2F;O事件发生了，却并不知道是哪那几个流（可能有一个，多个，甚至全部），我们只能无差别轮询所有流，找出能读出数据，或者写入数据的流，对他们进行操作。所以select具有O(n)的无差别轮询复杂度，同时处理的流越多，无差别轮询时间就越长。 select调用过程 （1）使用copy_from_user从用户空间拷贝fd_set到内核空间 （2）注册">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IO多路复用">
+<meta property="og:url" content="http://example.com/2022/08/01/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="IO多路复用一、select它仅仅知道了，有I&#x2F;O事件发生了，却并不知道是哪那几个流（可能有一个，多个，甚至全部），我们只能无差别轮询所有流，找出能读出数据，或者写入数据的流，对他们进行操作。所以select具有O(n)的无差别轮询复杂度，同时处理的流越多，无差别轮询时间就越长。 select调用过程 （1）使用copy_from_user从用户空间拷贝fd_set到内核空间 （2）注册">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2c06b4e5d90e49529f818807edeb3e8e~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp">
+<meta property="og:image" content="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/0727a97bb2e94019b69cbf8d3a951093~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp">
+<meta property="article:published_time" content="2022-08-01T14:38:41.000Z">
+<meta property="article:modified_time" content="2022-08-01T14:39:32.016Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="io">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2c06b4e5d90e49529f818807edeb3e8e~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp">
+
+<link rel="canonical" href="http://example.com/2022/08/01/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IO多路复用 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/01/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IO多路复用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-08-01 22:38:41 / 修改时间：22:39:32" itemprop="dateCreated datePublished" datetime="2022-08-01T22:38:41+08:00">2022-08-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="IO多路复用"><a href="#IO多路复用" class="headerlink" title="IO多路复用"></a>IO多路复用</h2><h3 id="一、select"><a href="#一、select" class="headerlink" title="一、select"></a>一、select</h3><p>它仅仅知道了，有I&#x2F;O事件发生了，却并不知道是哪那几个流（可能有一个，多个，甚至全部），我们只能无差别轮询所有流，找出能读出数据，或者写入数据的流，对他们进行操作。所以<strong>select具有O(n)的无差别轮询复杂度</strong>，同时处理的流越多，无差别轮询时间就越长。</p>
+<h4 id="select调用过程"><a href="#select调用过程" class="headerlink" title="select调用过程"></a>select调用过程</h4><p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2c06b4e5d90e49529f818807edeb3e8e~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp" alt="image.png"> （1）使用copy_from_user从用户空间拷贝fd_set到内核空间</p>
+<p>（2）注册回调函数__pollwait</p>
+<p>（3）遍历所有fd，调用其对应的poll方法（对于socket，这个poll方法是sock_poll，sock_poll根据情况会调用到tcp_poll,udp_poll或者datagram_poll）</p>
+<p>（4）以tcp_poll为例，其核心实现就是__pollwait，也就是上面注册的回调函数。</p>
+<p>（5）__pollwait的主要工作就是把current（当前进程）挂到设备的等待队列中，不同的设备有不同的等待队列，对于tcp_poll来说，其等待队列是sk-&gt;sk_sleep（注意把进程挂到等待队列中并不代表进程已经睡眠了）。在设备收到一条消息（网络设备）或填写完文件数据（磁盘设备）后，会唤醒设备等待队列上睡眠的进程，这时current便被唤醒了。</p>
+<p>（6）poll方法返回时会返回一个描述读写操作是否就绪的mask掩码，根据这个mask掩码给fd_set赋值。</p>
+<p>（7）如果遍历完所有的fd，还没有返回一个可读写的mask掩码，则会调用schedule_timeout是调用select的进程（也就是current）进入睡眠。当设备驱动发生自身资源可读写后，会唤醒其等待队列上睡眠的进程。如果超过一定的超时时间（schedule_timeout指定），还是没人唤醒，则调用select的进程会重新被唤醒获得CPU，进而重新遍历fd，判断有没有就绪的fd。</p>
+<p>（8）把fd_set从内核空间拷贝到用户空间。</p>
+<h4 id="select函数接口"><a href="#select函数接口" class="headerlink" title="select函数接口"></a>select函数接口</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/select.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/time.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> FD_SETSIZE 1024</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NFDBITS (8 * sizeof(unsigned long))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> __FDSET_LONGS (FD_SETSIZE/NFDBITS)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 数据结构 (bitmap)</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> fds_bits[__FDSET_LONGS];</span><br><span class="line">&#125; fd_set;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">select</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">int</span> max_fd, </span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *readset, </span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *writeset, </span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *exceptset, </span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="keyword">struct</span> timeval *timeout</span></span></span><br><span class="line"><span class="params"><span class="function">)</span>                              <span class="comment">// 返回值就绪描述符的数目</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">FD_ZERO</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>   <span class="comment">// 清空集合</span></span></span><br><span class="line"><span class="function"><span class="title">FD_SET</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>    <span class="comment">// 将给定的描述符加入集合</span></span></span><br><span class="line"><span class="function"><span class="title">FD_ISSET</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>  <span class="comment">// 判断指定描述符是否在集合中 </span></span></span><br><span class="line"><span class="function"><span class="title">FD_CLR</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>    <span class="comment">// 将给定的描述符从文件中删除  </span></span></span><br><span class="line"><span class="function">复制代码</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="select使用示例"><a href="#select使用示例" class="headerlink" title="select使用示例"></a>select使用示例</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 这里进行一些初始化的设置，</span></span><br><span class="line"><span class="comment">   * 包括socket建立，地址的设置等,</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"></span><br><span class="line">  fd_set read_fs, write_fs;</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">timeval</span> timeout;</span><br><span class="line">  <span class="type">int</span> max = <span class="number">0</span>;  <span class="comment">// 用于记录最大的fd，在轮询中时刻更新即可</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 初始化比特位</span></span><br><span class="line">  <span class="built_in">FD_ZERO</span>(&amp;read_fs);</span><br><span class="line">  <span class="built_in">FD_ZERO</span>(&amp;write_fs);</span><br><span class="line"></span><br><span class="line">  <span class="type">int</span> nfds = <span class="number">0</span>; <span class="comment">// 记录就绪的事件，可以减少遍历的次数</span></span><br><span class="line">  <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 阻塞获取</span></span><br><span class="line">    <span class="comment">// 每次需要把fd从用户态拷贝到内核态</span></span><br><span class="line">    nfds = <span class="built_in">select</span>(max + <span class="number">1</span>, &amp;read_fd, &amp;write_fd, <span class="literal">NULL</span>, &amp;timeout);</span><br><span class="line">    <span class="comment">// 每次需要遍历所有fd，判断有无读写事件发生</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt;= max &amp;&amp; nfds; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (i == listenfd) &#123;</span><br><span class="line">         --nfds;</span><br><span class="line">         <span class="comment">// 这里处理accept事件</span></span><br><span class="line">         <span class="built_in">FD_SET</span>(i, &amp;read_fd);<span class="comment">//将客户端socket加入到集合中</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (<span class="built_in">FD_ISSET</span>(i, &amp;read_fd)) &#123;</span><br><span class="line">        --nfds;</span><br><span class="line">        <span class="comment">// 这里处理read事件</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (<span class="built_in">FD_ISSET</span>(i, &amp;write_fd)) &#123;</span><br><span class="line">         --nfds;</span><br><span class="line">        <span class="comment">// 这里处理write事件</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<h4 id="select缺点"><a href="#select缺点" class="headerlink" title="select缺点"></a>select缺点</h4><p>select本质上是通过设置或者检查存放fd标志位的数据结构来进行下一步处理。这样所带来的缺点是：</p>
+<ul>
+<li>单个进程所打开的FD是有限制的，通过 <code>FD_SETSIZE</code> 设置，默认1024 ;</li>
+<li>每次调用 select，都需要把 fd 集合从用户态拷贝到内核态，这个开销在 fd 很多时会很大；</li>
+</ul>
+<blockquote>
+<p>需要维护一个用来存放大量fd的数据结构，这样会使得用户空间和内核空间在传递该结构时复制开销大</p>
+</blockquote>
+<ul>
+<li>对 socket 扫描时是线性扫描，采用轮询的方法，效率较低（高并发）</li>
+</ul>
+<blockquote>
+<p>当套接字比较多的时候，每次select()都要通过遍历FD_SETSIZE个Socket来完成调度,不管哪个Socket是活跃的,都遍历一遍。这会浪费很多CPU时间。如果能给套接字注册某个回调函数，当他们活跃时，自动完成相关操作，那就避免了轮询，这正是epoll与kqueue做的。</p>
+</blockquote>
+<h3 id="二、poll"><a href="#二、poll" class="headerlink" title="二、poll"></a>二、poll</h3><p>poll本质上和select没有区别，它将用户传入的数组拷贝到内核空间，然后查询每个fd对应的设备状态， <strong>但是它没有最大连接数的限制</strong>，原因是它是基于链表来存储的.</p>
+<h4 id="poll函数接口"><a href="#poll函数接口" class="headerlink" title="poll函数接口"></a>poll函数接口</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;poll.h&gt;</span></span></span><br><span class="line"><span class="comment">// 数据结构</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">pollfd</span> &#123;</span><br><span class="line">    <span class="type">int</span> fd;                         <span class="comment">// 需要监视的文件描述符</span></span><br><span class="line">    <span class="type">short</span> events;                   <span class="comment">// 需要内核监视的事件</span></span><br><span class="line">    <span class="type">short</span> revents;                  <span class="comment">// 实际发生的事件</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">poll</span><span class="params">(<span class="keyword">struct</span> pollfd fds[], <span class="type">nfds_t</span> nfds, <span class="type">int</span> timeout)</span></span>;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<h4 id="poll使用示例"><a href="#poll使用示例" class="headerlink" title="poll使用示例"></a>poll使用示例</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 先宏定义长度</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MAX_POLLFD_LEN 4096  </span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 在这里进行一些初始化的操作，</span></span><br><span class="line"><span class="comment">   * 比如初始化数据和socket等。</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"></span><br><span class="line">  <span class="type">int</span> nfds = <span class="number">0</span>;</span><br><span class="line">  pollfd fds[MAX_POLLFD_LEN];</span><br><span class="line">  <span class="built_in">memset</span>(fds, <span class="number">0</span>, <span class="built_in">sizeof</span>(fds));</span><br><span class="line">  fds[<span class="number">0</span>].fd = listenfd;</span><br><span class="line">  fds[<span class="number">0</span>].events = POLLRDNORM;</span><br><span class="line">  <span class="type">int</span> max  = <span class="number">0</span>;  <span class="comment">// 队列的实际长度，是一个随时更新的，也可以自定义其他的</span></span><br><span class="line">  <span class="type">int</span> timeout = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="type">int</span> current_size = max;</span><br><span class="line">  <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 阻塞获取</span></span><br><span class="line">    <span class="comment">// 每次需要把fd从用户态拷贝到内核态</span></span><br><span class="line">    nfds = <span class="built_in">poll</span>(fds, max+<span class="number">1</span>, timeout);</span><br><span class="line">    <span class="keyword">if</span> (fds[<span class="number">0</span>].revents &amp; POLLRDNORM) &#123;</span><br><span class="line">        <span class="comment">// 这里处理accept事件</span></span><br><span class="line">        connfd = <span class="built_in">accept</span>(listenfd);</span><br><span class="line">        <span class="comment">//将新的描述符添加到读描述符集合中</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 每次需要遍历所有fd，判断有无读写事件发生</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt; max; ++i) &#123;     </span><br><span class="line">      <span class="keyword">if</span> (fds[i].revents &amp; POLLRDNORM) &#123; </span><br><span class="line">         sockfd = fds[i].fd</span><br><span class="line">         <span class="keyword">if</span> ((n = <span class="built_in">read</span>(sockfd, buf, MAXLINE)) &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 这里处理read事件</span></span><br><span class="line">            <span class="keyword">if</span> (n == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">close</span>(sockfd);</span><br><span class="line">                fds[i].fd = <span class="number">-1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">         &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">             <span class="comment">// 这里处理write事件     </span></span><br><span class="line">         &#125;</span><br><span class="line">         <span class="keyword">if</span> (--nfds &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;       </span><br><span class="line">         &#125;   </span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<h4 id="poll缺点"><a href="#poll缺点" class="headerlink" title="poll缺点"></a>poll缺点</h4><p><strong>它没有最大连接数的限制</strong>，原因是它是基于链表来存储的，但是同样有缺点：</p>
+<ul>
+<li>每次调用 poll ，都需要把 fd 集合从用户态拷贝到内核态，这个开销在 fd 很多时会很大；</li>
+<li>对 socket 扫描是线性扫描，采用轮询的方法，效率较低（高并发时）</li>
+</ul>
+<h3 id="三、epoll"><a href="#三、epoll" class="headerlink" title="三、epoll"></a>三、epoll</h3><p><strong>epoll可以理解为event poll</strong>，不同于忙轮询和无差别轮询，epoll会把哪个流发生了怎样的I&#x2F;O事件通知我们。所以我们说epoll实际上是<strong>事件驱动（每个事件关联上fd）</strong>的，此时我们对这些流的操作都是有意义的。（复杂度降低到了O(1)）</p>
+<h4 id="epoll函数接口"><a href="#epoll函数接口" class="headerlink" title="epoll函数接口"></a>epoll函数接口</h4><p>当某一进程调用epoll_create方法时，Linux内核会创建一个eventpoll结构体，这个结构体中有两个成员与epoll的使用方式密切相关。eventpoll结构体如下所示：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 数据结构</span></span><br><span class="line"><span class="comment">// 每一个epoll对象都有一个独立的eventpoll结构体</span></span><br><span class="line"><span class="comment">// 用于存放通过epoll_ctl方法向epoll对象中添加进来的事件</span></span><br><span class="line"><span class="comment">// epoll_wait检查是否有事件发生时，只需要检查eventpoll对象中的rdlist双链表中是否有epitem元素即可</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">eventpoll</span> &#123;</span><br><span class="line">    <span class="comment">/*红黑树的根节点，这颗树中存储着所有添加到epoll中的需要监控的事件*/</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">rb_root</span>  rbr;</span><br><span class="line">    <span class="comment">/*双链表中则存放着将要通过epoll_wait返回给用户的满足条件的事件*/</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">list_head</span> rdlist;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_create</span><span class="params">(<span class="type">int</span> size)</span></span>; <span class="comment">// 内核中间加一个 ep 对象，把所有需要监听的 socket 都放到 ep 对象中</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="type">int</span> epfd, <span class="type">int</span> op, <span class="type">int</span> fd, <span class="keyword">struct</span> epoll_event *event)</span></span>; <span class="comment">// epoll_ctl 负责把 socket 增加、删除到内核红黑树</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="type">int</span> epfd, <span class="keyword">struct</span> epoll_event * events, <span class="type">int</span> maxevents, <span class="type">int</span> timeout)</span></span>;<span class="comment">// epoll_wait 负责检测可读队列，没有可读 socket 则阻塞进程</span></span><br><span class="line"></span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p>每一个epoll对象都有一个独立的eventpoll结构体，用于存放通过epoll_ctl方法向epoll对象中添加进来的事件。这些事件都会挂载在红黑树中，如此，重复添加的事件就可以通过红黑树而高效的识别出来(红黑树的插入时间效率是lgn，其中n为红黑树元素个数)。</p>
+<p>而所有添加到epoll中的事件都会与设备(网卡)驱动程序建立回调关系，也就是说，当相应的事件发生时会调用这个回调方法。这个回调方法在内核中叫ep_poll_callback,它会将发生的事件添加到rdlist双链表中。</p>
+<p>在epoll中，对于每一个事件，都会建立一个epitem结构体，如下所示：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">epitem</span>&#123;</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">rb_node</span>  rbn;<span class="comment">//红黑树节点</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">list_head</span>    rdllink;<span class="comment">//双向链表节点</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">epoll_filefd</span>  ffd;  <span class="comment">//事件句柄信息</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">eventpoll</span> *ep;    <span class="comment">//指向其所属的eventpoll对象</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">epoll_event</span> event; <span class="comment">//期待发生的事件类型</span></span><br><span class="line">&#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p>当调用epoll_wait检查是否有事件发生时，只需要检查eventpoll对象中的rdlist双链表中是否有epitem元素即可。如果rdlist不为空，则把发生的事件复制到用户态，同时将事件数量返回给用户。</p>
+<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/0727a97bb2e94019b69cbf8d3a951093~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp" alt="image.png"> <strong>从上面的讲解可知：通过红黑树和双链表数据结构，并结合回调机制，造就了epoll的高效。</strong> 讲解完了Epoll的机理，我们便能很容易掌握epoll的用法了。一句话描述就是：三步曲。</p>
+<ul>
+<li>第一步：epoll_create()系统调用。此调用返回一个句柄，之后所有的使用都依靠这个句柄来标识。</li>
+<li>第二步：epoll_ctl()系统调用。通过此调用向epoll对象中添加、删除、修改感兴趣的事件，返回0标识成功，返回-1表示失败。</li>
+<li>第三部：epoll_wait()系统调用。通过此调用收集收集在epoll监控中已经发生的事件。</li>
+</ul>
+<h4 id="epoll使用示例"><a href="#epoll使用示例" class="headerlink" title="epoll使用示例"></a>epoll使用示例</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">   <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 在这里进行一些初始化的操作，</span></span><br><span class="line"><span class="comment">   * 比如初始化数据和socket等。</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 内核中创建ep对象</span></span><br><span class="line">    epfd=<span class="built_in">epoll_create</span>(<span class="number">256</span>);</span><br><span class="line">    <span class="comment">// 需要监听的socket放到ep中</span></span><br><span class="line">    <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_ADD,listenfd,&amp;ev);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>) &#123;</span><br><span class="line">      <span class="comment">// 阻塞获取</span></span><br><span class="line">      nfds = <span class="built_in">epoll_wait</span>(epfd,events,<span class="number">20</span>,<span class="number">0</span>);</span><br><span class="line">      <span class="keyword">for</span>(i=<span class="number">0</span>;i&lt;nfds;++i) &#123;</span><br><span class="line">          <span class="keyword">if</span>(events[i].data.fd==listenfd) &#123;</span><br><span class="line">              <span class="comment">// 这里处理accept事件</span></span><br><span class="line">              connfd = <span class="built_in">accept</span>(listenfd);</span><br><span class="line">              <span class="comment">// 接收新连接写到内核对象中</span></span><br><span class="line">              <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_ADD,connfd,&amp;ev);</span><br><span class="line">          &#125; <span class="keyword">else</span> <span class="keyword">if</span> (events[i].events&amp;EPOLLIN) &#123;</span><br><span class="line">              <span class="comment">// 这里处理read事件</span></span><br><span class="line">              <span class="built_in">read</span>(sockfd, BUF, MAXLINE);</span><br><span class="line">              <span class="comment">//读完后准备写</span></span><br><span class="line">              <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_MOD,sockfd,&amp;ev);</span><br><span class="line">          &#125; <span class="keyword">else</span> <span class="keyword">if</span>(events[i].events&amp;EPOLLOUT) &#123;</span><br><span class="line">              <span class="comment">// 这里处理write事件</span></span><br><span class="line">              <span class="built_in">write</span>(sockfd, BUF, n);</span><br><span class="line">              <span class="comment">//写完后准备读</span></span><br><span class="line">              <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_MOD,sockfd,&amp;ev);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<h4 id="epoll的优点"><a href="#epoll的优点" class="headerlink" title="epoll的优点"></a>epoll的优点</h4><ul>
+<li>没有最大并发连接的限制，能打开的FD的上限远大于1024（1G的内存上能监听约10万个端口）；</li>
+<li>效率提升，不是轮询的方式，不会随着FD数目的增加效率下降。只有活跃可用的FD才会调用callback函数；即Epoll最大的优点就在于它只管你“活跃”的连接，而跟连接总数无关，因此在实际的网络环境中，Epoll的效率就会远远高于select和poll；</li>
+<li>内存拷贝，利用mmap()文件映射内存加速与内核空间的消息传递；即epoll使用mmap减少复制开销。</li>
+</ul>
+<h4 id="epoll缺点"><a href="#epoll缺点" class="headerlink" title="epoll缺点"></a>epoll缺点</h4><ul>
+<li>epoll只能工作在 linux 下</li>
+</ul>
+<h4 id="epoll-LT-与-ET-模式的区别"><a href="#epoll-LT-与-ET-模式的区别" class="headerlink" title="epoll LT 与 ET 模式的区别"></a>epoll LT 与 ET 模式的区别</h4><p>epoll 有 EPOLLLT 和 EPOLLET 两种触发模式，LT 是默认的模式，ET 是 “高速” 模式。</p>
+<ul>
+<li>LT 模式下，只要这个 fd 还有数据可读，每次 epoll_wait 都会返回它的事件，提醒用户程序去操作；</li>
+<li>ET 模式下，它只会提示一次，直到下次再有数据流入之前都不会再提示了，无论 fd 中是否还有数据可读。所以在 ET 模式下，read 一个 fd 的时候一定要把它的 buffer 读完，或者遇到 EAGIN 错误。</li>
+</ul>
+<p>epoll使用“事件”的就绪通知方式，通过epoll_ctl注册fd，一旦该fd就绪，内核就会采用类似callback的回调机制来激活该fd，epoll_wait便可以收到通知。</p>
+<h3 id="四、select-x2F-poll-x2F-epoll之间的区别"><a href="#四、select-x2F-poll-x2F-epoll之间的区别" class="headerlink" title="四、select&#x2F;poll&#x2F;epoll之间的区别"></a>四、select&#x2F;poll&#x2F;epoll之间的区别</h3><p>select，poll，epoll都是IO多路复用的机制。I&#x2F;O多路复用就通过一种机制，可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作。<strong>但select，poll，epoll本质上都是同步I&#x2F;O，因为他们都需要在读写事件就绪后自己负责进行读写，也就是说这个读写过程是阻塞的</strong>，而异步I&#x2F;O则无需自己负责进行读写，异步I&#x2F;O的实现会负责把数据从内核拷贝到用户空间。 </p>
+<p>epoll跟select都能提供多路I&#x2F;O复用的解决方案。在现在的Linux内核里有都能够支持，其中epoll是Linux所特有，而select则应该是POSIX所规定，一般操作系统均有实现</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>select</strong></th>
+<th><strong>poll</strong></th>
+<th><strong>epoll</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>操作方式</td>
+<td>遍历</td>
+<td>遍历</td>
+<td>回调</td>
+</tr>
+<tr>
+<td>数据结构</td>
+<td>bitmap</td>
+<td>数组</td>
+<td>红黑树</td>
+</tr>
+<tr>
+<td>最大连接数</td>
+<td>1024（x86）或 2048（x64）</td>
+<td>无上限</td>
+<td>无上限</td>
+</tr>
+<tr>
+<td>最大支持文件描述符数</td>
+<td>一般有最大值限制</td>
+<td>65535</td>
+<td>65535</td>
+</tr>
+<tr>
+<td>fd拷贝</td>
+<td>每次调用select，都需要把fd集合从用户态拷贝到内核态</td>
+<td>每次调用poll，都需要把fd集合从用户态拷贝到内核态</td>
+<td>fd首次调用epoll_ctl拷贝，每次调用epoll_wait不拷贝</td>
+</tr>
+<tr>
+<td>工作模式</td>
+<td>LT</td>
+<td>LT</td>
+<td>支持ET高效模式</td>
+</tr>
+<tr>
+<td>工作效率</td>
+<td>每次调用都进行线性遍历，时间复杂度为O(n)</td>
+<td>每次调用都进行线性遍历，时间复杂度为O(n)</td>
+<td>事件通知方式，每当fd就绪，系统注册的回调函数就会被调用，将就绪fd放到readyList里面，时间复杂度O(1)</td>
+</tr>
+</tbody></table>
+<p>epoll是Linux目前大规模网络并发程序开发的首选模型。在绝大多数情况下性能远超select和poll。目前流行的高性能web服务器Nginx正式依赖于epoll提供的高效网络套接字轮询服务。但是，在并发连接不高的情况下，多线程+阻塞I&#x2F;O方式可能性能更好。</p>
+<h4 id="支持一个进程所能打开的最大连接数"><a href="#支持一个进程所能打开的最大连接数" class="headerlink" title="支持一个进程所能打开的最大连接数"></a>支持一个进程所能打开的最大连接数</h4><ul>
+<li>select：单个进程所能打开的最大连接数有FD_SETSIZE宏定义，其大小是32个整数的大小（在32位的机器上，大小就是32_32，同理64位机器上FD_SETSIZE为32_64），当然我们可以对进行修改，然后重新编译内核，但是性能可能会受到影响，这需要进一步的测试。</li>
+<li>poll：poll本质上和select没有区别，但是它没有最大连接数的限制，原因是它是基于链表来存储的。</li>
+<li>epoll：虽然连接数有上限，但是很大，1G内存的机器上可以打开10万左右的连接，2G内存的机器可以打开20万左右的连接。</li>
+</ul>
+<h4 id="FD剧增后带来的IO效率问题"><a href="#FD剧增后带来的IO效率问题" class="headerlink" title="FD剧增后带来的IO效率问题"></a>FD剧增后带来的IO效率问题</h4><ul>
+<li>select：因为每次调用时都会对连接进行线性遍历，所以随着FD的增加会造成遍历速度慢的“线性下降性能问题”。</li>
+<li>poll：同上</li>
+<li>epoll：因为epoll内核中实现是根据每个fd上的callback函数来实现的，只有活跃的socket才会主动调用callback，所以在活跃socket较少的情况下，使用epoll没有前面两者的线性下降的性能问题，但是所有socket都很活跃的情况下，可能会有性能问题。</li>
+</ul>
+<h4 id="消息传递方式"><a href="#消息传递方式" class="headerlink" title="消息传递方式"></a>消息传递方式</h4><ul>
+<li>select：内核需要将消息传递到用户空间，都需要内核拷贝动作</li>
+<li>poll：同上</li>
+<li>epoll：epoll通过内核和用户空间共享一块内存来实现的。</li>
+</ul>
+<h3 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h3><p>select，poll实现需要自己不断轮询所有fd集合，直到设备就绪，期间可能要睡眠和唤醒多次交替。而epoll其实也需要调用epoll_wait不断轮询就绪链表，期间也可能多次睡眠和唤醒交替，但是它是设备就绪时，调用回调函数，把就绪fd放入就绪链表中，并唤醒在epoll_wait中进入睡眠的进程。虽然都要睡眠和交替，但是select和poll在“醒着”的时候要遍历整个fd集合，而epoll在“醒着”的时候只要判断一下就绪链表是否为空就行了，这节省了大量的CPU时间。这就是回调机制带来的性能提升。</p>
+<p>select，poll每次调用都要把fd集合从用户态往内核态拷贝一次，并且要把current往设备等待队列中挂一次，而epoll只要一次拷贝，而且把current往等待队列上挂也只挂一次（在epoll_wait的开始，注意这里的等待队列并不是设备等待队列，只是一个epoll内部定义的等待队列）。这也能节省不少的开销。 :</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 操作系统</a>
+              <a href="/tags/io/" rel="tag"># io</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/07/31/%E7%BD%91%E7%BB%9CIO%E6%A8%A1%E5%9E%8B/" rel="prev" title="网络IO模型">
+      <i class="fa fa-chevron-left"></i> 网络IO模型
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/04/Spring%E4%BA%8B%E5%8A%A1/" rel="next" title="Spring事务">
+      Spring事务 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8"><span class="nav-number">1.</span> <span class="nav-text">IO多路复用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E3%80%81select"><span class="nav-number">1.1.</span> <span class="nav-text">一、select</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#select%E8%B0%83%E7%94%A8%E8%BF%87%E7%A8%8B"><span class="nav-number">1.1.1.</span> <span class="nav-text">select调用过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#select%E5%87%BD%E6%95%B0%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.1.2.</span> <span class="nav-text">select函数接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#select%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.1.3.</span> <span class="nav-text">select使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#select%E7%BC%BA%E7%82%B9"><span class="nav-number">1.1.4.</span> <span class="nav-text">select缺点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E3%80%81poll"><span class="nav-number">1.2.</span> <span class="nav-text">二、poll</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#poll%E5%87%BD%E6%95%B0%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.2.1.</span> <span class="nav-text">poll函数接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#poll%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.2.2.</span> <span class="nav-text">poll使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#poll%E7%BC%BA%E7%82%B9"><span class="nav-number">1.2.3.</span> <span class="nav-text">poll缺点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E3%80%81epoll"><span class="nav-number">1.3.</span> <span class="nav-text">三、epoll</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#epoll%E5%87%BD%E6%95%B0%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.3.1.</span> <span class="nav-text">epoll函数接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#epoll%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.3.2.</span> <span class="nav-text">epoll使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#epoll%E7%9A%84%E4%BC%98%E7%82%B9"><span class="nav-number">1.3.3.</span> <span class="nav-text">epoll的优点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#epoll%E7%BC%BA%E7%82%B9"><span class="nav-number">1.3.4.</span> <span class="nav-text">epoll缺点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#epoll-LT-%E4%B8%8E-ET-%E6%A8%A1%E5%BC%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">1.3.5.</span> <span class="nav-text">epoll LT 与 ET 模式的区别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9B%E3%80%81select-x2F-poll-x2F-epoll%E4%B9%8B%E9%97%B4%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">1.4.</span> <span class="nav-text">四、select&#x2F;poll&#x2F;epoll之间的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%94%AF%E6%8C%81%E4%B8%80%E4%B8%AA%E8%BF%9B%E7%A8%8B%E6%89%80%E8%83%BD%E6%89%93%E5%BC%80%E7%9A%84%E6%9C%80%E5%A4%A7%E8%BF%9E%E6%8E%A5%E6%95%B0"><span class="nav-number">1.4.1.</span> <span class="nav-text">支持一个进程所能打开的最大连接数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FD%E5%89%A7%E5%A2%9E%E5%90%8E%E5%B8%A6%E6%9D%A5%E7%9A%84IO%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98"><span class="nav-number">1.4.2.</span> <span class="nav-text">FD剧增后带来的IO效率问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E6%96%B9%E5%BC%8F"><span class="nav-number">1.4.3.</span> <span class="nav-text">消息传递方式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">1.5.</span> <span class="nav-text">五、总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

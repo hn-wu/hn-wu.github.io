@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="java并发问题及解决方案一、为什么要多线程1．耗时的操作使用线程，提高应用程序响应 2．并行操作时使用线程，如C&#x2F;S架构的服务器端并发线程响应用户的请求。 3．多CPU系统中，使用线程提高CPU利用率 4．改善程序结构。一个既长又复杂的进程可以考虑分为多个线程，成为几个独立或半独立的运行部分，这样的程序会利于理解和修改。 二、多线程有什么问题（一）线程安全问题在单线程系统上正常运行的代">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java并发问题及解决方案">
+<meta property="og:url" content="http://example.com/2022/07/21/java-thread-problems/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="java并发问题及解决方案一、为什么要多线程1．耗时的操作使用线程，提高应用程序响应 2．并行操作时使用线程，如C&#x2F;S架构的服务器端并发线程响应用户的请求。 3．多CPU系统中，使用线程提高CPU利用率 4．改善程序结构。一个既长又复杂的进程可以考虑分为多个线程，成为几个独立或半独立的运行部分，这样的程序会利于理解和修改。 二、多线程有什么问题（一）线程安全问题在单线程系统上正常运行的代">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-07-21T10:27:12.000Z">
+<meta property="article:modified_time" content="2022-07-21T10:30:14.011Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="线程">
+<meta property="article:tag" content="并发">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/07/21/java-thread-problems/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Java并发问题及解决方案 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/07/21/java-thread-problems/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java并发问题及解决方案
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-07-21 18:27:12 / 修改时间：18:30:14" itemprop="dateCreated datePublished" datetime="2022-07-21T18:27:12+08:00">2022-07-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">Java并发</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="java并发问题及解决方案"><a href="#java并发问题及解决方案" class="headerlink" title="java并发问题及解决方案"></a>java并发问题及解决方案</h2><h3 id="一、为什么要多线程"><a href="#一、为什么要多线程" class="headerlink" title="一、为什么要多线程"></a>一、为什么要多线程</h3><p>1．耗时的操作使用线程，提高应用程序响应</p>
+<p>2．并行操作时使用线程，如C&#x2F;S架构的服务器端并发线程响应用户的请求。</p>
+<p>3．多CPU系统中，使用线程提高CPU利用率</p>
+<p>4．改善程序结构。一个既长又复杂的进程可以考虑分为多个线程，成为几个独立或半独<br>立的运行部分，这样的程序会利于理解和修改。</p>
+<h3 id="二、多线程有什么问题"><a href="#二、多线程有什么问题" class="headerlink" title="二、多线程有什么问题"></a>二、多线程有什么问题</h3><h4 id="（一）线程安全问题"><a href="#（一）线程安全问题" class="headerlink" title="（一）线程安全问题"></a>（一）线程安全问题</h4><p>在单线程系统上正常运行的代码，在多线程环境中可能会出现意料之外的结果<br>因此实现线程安全需要保证线程原子性、可见性</p>
+<p>（1）原子性：<code>对数据的操作不会受其他线程打断</code>，意味着一个线程操作数据过程中不会插入其他线程对数据的操作<br>（2）可见性：<code>当线程修改了数据的状态时，能够立即被其他线程知晓</code>，即数据修改后会立即写入主内存，后续其他线程读取时就能得知数据的变化</p>
+<p>每个线程都有自己的工作内存，工作内存和主存间要通过store和load进行交互，一旦线程1没有即使更新内存（从工作内存写回主存），那么线程2就无法获得正确数据</p>
+<h4 id="二-活跃性问题"><a href="#二-活跃性问题" class="headerlink" title="(二)活跃性问题"></a>(二)活跃性问题</h4><p>活跃性：指”正确的是最终会发生“。<br>导致活跃性问题可能是由死锁、活锁、饥饿等引起的</p>
+<p>死锁：死锁发生在一个线程需要获取多个资源的时候，这时由于两个线程互相等待对方的资源而被阻塞，死锁是最常见的活跃性问题。</p>
+<p>活锁：活锁指的是线程不断重复执行相同的操作，但每次操作的结果都是失败的。尽管这个问题不会阻塞线程，但是程序也无法继续执行。</p>
+<p>饥饿：饥饿指的线程无法访问到它需要的资源而不能继续执行时，引发饥饿最常见资源就是CPU时钟周期。</p>
+<h4 id="三-性能问题"><a href="#三-性能问题" class="headerlink" title="(三)性能问题"></a>(三)性能问题</h4><p>​	即使没有如线程安全和死锁，活锁这些问题，多线程并发也不一定会快吗？因为多线程有<strong>线程创建</strong>和<strong>线程上下文切换</strong>的开销<br>​	创建线程是直接向操作系统申请资源，对操作系统来说创建一个线程的代价是十分昂贵的，需要给他分配内存，列入调度任务等，线程创建完了之后，还会遇到线程<strong>上下文</strong>切换</p>
+<p>​	在多线程编程中，线程个数一般都大于 CPU 个数，而每个 CPU 在同一时刻只能被一个线程使用，为了让用户感觉多个线程是在同时执行的， CPU 资源的分配采用了时间片轮转策略 ，也就是给每个线程分配一个时间片。</p>
+<p>​	<strong>线程在时间片内占用 CPU 执行任务。当线程使用完时间片后，就会变为就绪状态并让出 CPU</strong>，让其他线程占用 这就是上下文切换 ，从当前线程的上下文切换到了其他线程 。</p>
+<p>​	让出 CPU 的线程等下次轮 到自己占有 CPU 时如何知道自己之前运行到哪里了？所以在切换线程上下文时需要保存当前线程的执行现场，当再次执行时，根据保存的执行现场信息恢复执行现场。</p>
+<p>​	线程上下文切换时机有 </p>
+<ul>
+<li>当前线程的 CPU 时间片使用完处于就绪状态</li>
+<li>当前线程被其他线程中断<br>一般减少上下文切换的方法有：<strong>无锁并发编程</strong>，<strong>CAS算法</strong>，<strong>使用协程</strong>等方式</li>
+</ul>
+<h3 id="三、如何解决这些问题"><a href="#三、如何解决这些问题" class="headerlink" title="三、如何解决这些问题"></a>三、如何解决这些问题</h3><h4 id="（一）互斥同步"><a href="#（一）互斥同步" class="headerlink" title="（一）互斥同步"></a>（一）互斥同步</h4><p>保证在多线程的环境下，一个资源在同一时刻只被一个线程使用</p>
+<h4 id="（二）非阻塞同步"><a href="#（二）非阻塞同步" class="headerlink" title="（二）非阻塞同步"></a>（二）非阻塞同步</h4><p>实现非阻塞实现CAS需要三个操作数：内存地址，旧版本值，新版本值</p>
+<p>当且仅当内存地址中存储的值与旧版本值相符时，才会进行操作，并更新新版本值</p>
+<h4 id="（三）无同步方案"><a href="#（三）无同步方案" class="headerlink" title="（三）无同步方案"></a>（三）无同步方案</h4><p>1.可重入代码</p>
+<p>​	这种代码也叫做纯代码（Pure Code），可以在代码执行的任何时刻中断它，转而去执行另外一段代码（包括递归调用它本身），而在控制权返回后，原来的程序不会出现任何错误。</p>
+<p>​	可重入代码有一些共同的特征，例如不依赖存储在堆上的数据和公用的系统资源、用到的状态量都由参数中传入、不调用非可重入的方法等。</p>
+<p>2.线程本地存储（Thread Local Storage）</p>
+<p>​	如果一段代码中所需要的数据必须与其他代码共享，那就看看这些共享数据的代码是否能保证在同一个线程中执行。如果能保证，我们就可以把共享数据的可见范围限制在同一个线程之内，可以使用 java.lang.ThreadLocal 类来实现线程本地存储功能。</p>
+<p>3.栈封闭</p>
+<p>​	多个线程访问同一个方法的局部变量</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/%E7%BA%BF%E7%A8%8B/" rel="tag"># 线程</a>
+              <a href="/tags/%E5%B9%B6%E5%8F%91/" rel="tag"># 并发</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/07/21/redis-singleThread/" rel="prev" title="Redis单线程">
+      <i class="fa fa-chevron-left"></i> Redis单线程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/07/22/cpu%E7%BB%84%E6%88%90/" rel="next" title="cpu组成">
+      cpu组成 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#java%E5%B9%B6%E5%8F%91%E9%97%AE%E9%A2%98%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">1.</span> <span class="nav-text">java并发问题及解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.</span> <span class="nav-text">一、为什么要多线程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%9C%89%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.</span> <span class="nav-text">二、多线程有什么问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.1.</span> <span class="nav-text">（一）线程安全问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C-%E6%B4%BB%E8%B7%83%E6%80%A7%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.2.</span> <span class="nav-text">(二)活跃性问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89-%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.3.</span> <span class="nav-text">(三)性能问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%E8%BF%99%E4%BA%9B%E9%97%AE%E9%A2%98"><span class="nav-number">1.3.</span> <span class="nav-text">三、如何解决这些问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E4%BA%92%E6%96%A5%E5%90%8C%E6%AD%A5"><span class="nav-number">1.3.1.</span> <span class="nav-text">（一）互斥同步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E9%9D%9E%E9%98%BB%E5%A1%9E%E5%90%8C%E6%AD%A5"><span class="nav-number">1.3.2.</span> <span class="nav-text">（二）非阻塞同步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E6%97%A0%E5%90%8C%E6%AD%A5%E6%96%B9%E6%A1%88"><span class="nav-number">1.3.3.</span> <span class="nav-text">（三）无同步方案</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

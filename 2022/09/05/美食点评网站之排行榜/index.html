@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="美食点评网站之排行榜一、背景作为一个美食点评网站，一个重要的功能就是对店铺进行排行，同时对排行榜要进行排名也要有相关依据，如用户评分、访问用户数量等等，通过对店铺进行排名，选出尽可能符合大众口味的店铺。 二、原有技术实现在对店铺排名依据进行筛选后，决定以用户对店铺的评分为依据，并把评分设置为0~5分，由用户进行打分，同时在数据库中建立店铺排行榜表 123456CREATE TABLE store_">
+<meta property="og:type" content="article">
+<meta property="og:title" content="美食点评网站之排行榜">
+<meta property="og:url" content="http://example.com/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E6%8E%92%E8%A1%8C%E6%A6%9C/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="美食点评网站之排行榜一、背景作为一个美食点评网站，一个重要的功能就是对店铺进行排行，同时对排行榜要进行排名也要有相关依据，如用户评分、访问用户数量等等，通过对店铺进行排名，选出尽可能符合大众口味的店铺。 二、原有技术实现在对店铺排名依据进行筛选后，决定以用户对店铺的评分为依据，并把评分设置为0~5分，由用户进行打分，同时在数据库中建立店铺排行榜表 123456CREATE TABLE store_">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/22724601-51bbd149dca4c2d6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/610/format/webp">
+<meta property="article:published_time" content="2022-09-05T04:10:40.000Z">
+<meta property="article:modified_time" content="2022-09-05T04:11:31.108Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="项目">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/22724601-51bbd149dca4c2d6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/610/format/webp">
+
+<link rel="canonical" href="http://example.com/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E6%8E%92%E8%A1%8C%E6%A6%9C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>美食点评网站之排行榜 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E6%8E%92%E8%A1%8C%E6%A6%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          美食点评网站之排行榜
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-05 12:10:40 / 修改时间：12:11:31" itemprop="dateCreated datePublished" datetime="2022-09-05T12:10:40+08:00">2022-09-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99/" itemprop="url" rel="index"><span itemprop="name">美食点评网站</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="美食点评网站之排行榜"><a href="#美食点评网站之排行榜" class="headerlink" title="美食点评网站之排行榜"></a>美食点评网站之排行榜</h2><h4 id="一、背景"><a href="#一、背景" class="headerlink" title="一、背景"></a>一、背景</h4><p>作为一个美食点评网站，一个重要的功能就是对店铺进行排行，同时对排行榜要进行排名也要有相关依据，如用户评分、访问用户数量等等，通过对店铺进行排名，选出尽可能符合大众口味的店铺。</p>
+<h4 id="二、原有技术实现"><a href="#二、原有技术实现" class="headerlink" title="二、原有技术实现"></a>二、原有技术实现</h4><p>在对店铺排名依据进行筛选后，决定<strong>以用户对店铺的评分</strong>为依据，并把评分设置为0~5分，由用户进行打分，同时在数据库中建立店铺排行榜表</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> store_rank(</span><br><span class="line">`id` <span class="type">BIGINT</span> COMMENT unsigned <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="string">&#x27;店铺ID&#x27;</span> auto_increment,</span><br><span class="line">`score` <span class="type">int</span>(<span class="number">8</span>) COMMENT unsigned <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="string">&#x27;总评分&#x27;</span>,</span><br><span class="line"> `count` <span class="type">int</span>(<span class="number">8</span>) <span class="keyword">COMMIT</span> unsigned <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="string">&#x27;评分人数&#x27;</span>,</span><br><span class="line"> <span class="keyword">PRIMARY</span> KEY (`id`)</span><br><span class="line">)AUTO_INCREMENT<span class="operator">=</span><span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>如果用户对店铺进行评分，就在总评分上增加对应的评分，同时评分人数+1；同时对用户按照活跃度进行划分，活跃度越高的角色，评分的权重也就越高，那么在他进行评分时，总评分就会乘以对应的权重</p>
+<p>如果想要获得店铺排名，就要计算<code>总评分/评分人数</code>，再对评分进行递减排序就可以了</p>
+<h4 id="三、优化后技术实现"><a href="#三、优化后技术实现" class="headerlink" title="三、优化后技术实现"></a>三、优化后技术实现</h4><p>以上的技术实现在经过实践后，发现只有在参与排名店铺的评分人数达到一定基数后才具有权威性，不然当用户评分人数少时，一旦出现刷分现象，店铺评分就会快速上升。故选择对参与排名的店铺进行限制，只有当店铺的评分人数达到标准后，才会进入排名。</p>
+<p>但这就对刚开放的店铺不公平，因为这些店铺需要经过一段时间的累计才能进行排行榜，使得排行榜的实时性欠佳，因此在参考了与店铺排名类型的IMDB影评类网站，借鉴了其TOP250店铺排行的算法。</p>
+<h5 id="（一）IMDB电影排名算法介绍"><a href="#（一）IMDB电影排名算法介绍" class="headerlink" title="（一）IMDB电影排名算法介绍"></a>（一）IMDB电影排名算法介绍</h5><p>为了解决排行榜总是那些票数最多的项目，新项目和老项目都难得到出头机会，导致其排名可能长期靠后。因此IMDB系统根据投票结果，计算出每部电影的平均得分，然后通过平均得分，排出最受欢迎的前250名电影。</p>
+<p>其借鉴了贝叶斯推断的思想：若不知道投票结果，就先预计一个值，然后根据后续变化不断进行信息修正，使它越来越接近正确的值。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/22724601-51bbd149dca4c2d6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/610/format/webp"></p>
+<ul>
+<li><p>WR表示加权得分</p>
+</li>
+<li><p>R表示该电影的用户投票的平均得分</p>
+</li>
+<li><p>V表示该电影的投票人数</p>
+</li>
+<li><p>M表示排名前250名的电影的最低投票数</p>
+</li>
+<li><p>C表示所有电影的平均得分</p>
+</li>
+</ul>
+<h5 id="（二）代码实现"><a href="#（二）代码实现" class="headerlink" title="（二）代码实现"></a>（二）代码实现</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ScoreRank</span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Autowired</span> RedisCache redisCache;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> Double <span class="title function_">scoreRankIMDB</span><span class="params">(<span class="type">long</span> sum, <span class="type">double</span> score)</span> &#123;</span><br><span class="line">    <span class="comment">//进入排名的店铺的最低人数</span></span><br><span class="line">    <span class="type">long</span> <span class="variable">thersholdPeople</span> <span class="operator">=</span> redisCache.getCacheObject(THRESHOLD_PEOPLE);</span><br><span class="line">    <span class="comment">//所有店铺的评价得分</span></span><br><span class="line">    <span class="type">double</span> <span class="variable">averageScore</span> <span class="operator">=</span> redisCache.getCacheObject(AVERAGE_SCORE);</span><br><span class="line">    <span class="type">double</span> <span class="variable">result</span> <span class="operator">=</span> </span><br><span class="line">        (sum * score + thersholdPeople * averageScore) / (sum + thersholdPeople);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在获得了店铺评分后，利用Redis中Zet数据结构用店铺ID作为值，用店铺评分作为分数对店铺进行排行</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/88a2999c807d">https://www.jianshu.com/p/88a2999c807d</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%A1%B9%E7%9B%AE/" rel="tag"># 项目</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/04/%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/" rel="prev" title="线程的生命周期">
+      <i class="fa fa-chevron-left"></i> 线程的生命周期
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E5%A5%96%E6%B1%A0%E9%A2%86%E5%8F%96/" rel="next" title="美食点评网站之奖池领取">
+      美食点评网站之奖池领取 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="nav-number">1.</span> <span class="nav-text">美食点评网站之排行榜</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF"><span class="nav-number">1.0.1.</span> <span class="nav-text">一、背景</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%8E%9F%E6%9C%89%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.0.2.</span> <span class="nav-text">二、原有技术实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%BC%98%E5%8C%96%E5%90%8E%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.0.3.</span> <span class="nav-text">三、优化后技术实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89IMDB%E7%94%B5%E5%BD%B1%E6%8E%92%E5%90%8D%E7%AE%97%E6%B3%95%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.0.3.1.</span> <span class="nav-text">（一）IMDB电影排名算法介绍</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.0.3.2.</span> <span class="nav-text">（二）代码实现</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

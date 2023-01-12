@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="缓存介绍一、缓存的作用（一）快速读取缓存一般都设置在内存中，所以读取缓存的速度会远远大于数据库 （二）预读取预读取就是预先读取将要载入的数据，也可以称作「缓存预热」，在系统对外提供服务之前，先将硬盘中的一部分数据加载到内存中，然后再对外提供服务。 （三）延迟写预先将需要写入到磁盘或者数据库的数据，先暂时写入到内存，然后就返回成功。再定时将内存中的数据批量写入到磁盘。由于内存断点就数据丢失的特性，所">
+<meta property="og:type" content="article">
+<meta property="og:title" content="缓存介绍">
+<meta property="og:url" content="http://example.com/2022/09/07/%E7%BC%93%E5%AD%98%E4%BB%8B%E7%BB%8D/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="缓存介绍一、缓存的作用（一）快速读取缓存一般都设置在内存中，所以读取缓存的速度会远远大于数据库 （二）预读取预读取就是预先读取将要载入的数据，也可以称作「缓存预热」，在系统对外提供服务之前，先将硬盘中的一部分数据加载到内存中，然后再对外提供服务。 （三）延迟写预先将需要写入到磁盘或者数据库的数据，先暂时写入到内存，然后就返回成功。再定时将内存中的数据批量写入到磁盘。由于内存断点就数据丢失的特性，所">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_jpg/oB5bd6W6hI1iaiaibXZ4IDibPLFuN1thEEhmaDcruz2icdtXFy9qBeSiazvWfxZrVv3cibWnAxdU5NyCg3dp46o1QocNw/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/1dae7a4076947c3bb5f0239c8b2ac497.png">
+<meta property="article:published_time" content="2022-09-07T02:06:57.000Z">
+<meta property="article:modified_time" content="2022-09-07T02:07:41.051Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="redis">
+<meta property="article:tag" content="缓存">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://mmbiz.qpic.cn/mmbiz_jpg/oB5bd6W6hI1iaiaibXZ4IDibPLFuN1thEEhmaDcruz2icdtXFy9qBeSiazvWfxZrVv3cibWnAxdU5NyCg3dp46o1QocNw/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1">
+
+<link rel="canonical" href="http://example.com/2022/09/07/%E7%BC%93%E5%AD%98%E4%BB%8B%E7%BB%8D/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>缓存介绍 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/07/%E7%BC%93%E5%AD%98%E4%BB%8B%E7%BB%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          缓存介绍
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-07 10:06:57 / 修改时间：10:07:41" itemprop="dateCreated datePublished" datetime="2022-09-07T10:06:57+08:00">2022-09-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%93%E5%AD%98/" itemprop="url" rel="index"><span itemprop="name">缓存</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="缓存介绍"><a href="#缓存介绍" class="headerlink" title="缓存介绍"></a>缓存介绍</h2><h4 id="一、缓存的作用"><a href="#一、缓存的作用" class="headerlink" title="一、缓存的作用"></a>一、缓存的作用</h4><h5 id="（一）快速读取"><a href="#（一）快速读取" class="headerlink" title="（一）快速读取"></a>（一）快速读取</h5><p>缓存一般都设置在内存中，所以读取缓存的速度会远远大于数据库</p>
+<h5 id="（二）预读取"><a href="#（二）预读取" class="headerlink" title="（二）预读取"></a>（二）预读取</h5><p>预读取就是预先读取将要载入的数据，也可以称作「缓存预热」，在系统对外提供服务之前，先将硬盘中的一部分数据加载到内存中，然后再对外提供服务。</p>
+<h5 id="（三）延迟写"><a href="#（三）延迟写" class="headerlink" title="（三）延迟写"></a>（三）延迟写</h5><p>预先将需要写入到磁盘或者数据库的数据，先暂时写入到内存，然后就返回成功。再定时将内存中的数据批量写入到磁盘。由于内存断点就数据丢失的特性，所以延迟写一般仅用于对数据完整性要求不是那么苛刻的场景</p>
+<h4 id="二、缓存应该使用在哪里"><a href="#二、缓存应该使用在哪里" class="headerlink" title="二、缓存应该使用在哪里"></a>二、缓存应该使用在哪里</h4><h5 id="（一）缓存数据的特性"><a href="#（一）缓存数据的特性" class="headerlink" title="（一）缓存数据的特性"></a>（一）缓存数据的特性</h5><ul>
+<li>热点数据（被高频访问，如几十次&#x2F;秒以上）</li>
+<li>静态数据（很少变化，读远大于写，如几天变更一次）</li>
+</ul>
+<h5 id="（二）缓存的应用场景"><a href="#（二）缓存的应用场景" class="headerlink" title="（二）缓存的应用场景"></a>（二）缓存的应用场景</h5><p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/oB5bd6W6hI1iaiaibXZ4IDibPLFuN1thEEhmaDcruz2icdtXFy9qBeSiazvWfxZrVv3cibWnAxdU5NyCg3dp46o1QocNw/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1"></p>
+<h5 id="（二）浏览器缓存"><a href="#（二）浏览器缓存" class="headerlink" title="（二）浏览器缓存"></a>（二）浏览器缓存</h5><p>这是离用户最近的可以作为缓存的地方，缓存的数据存储在用户的终端设备上，比如浏览器、客户端等等，一般用于缓存图片、js、css以及cookie等。</p>
+<h5 id="（三）CDN缓存"><a href="#（三）CDN缓存" class="headerlink" title="（三）CDN缓存"></a>（三）CDN缓存</h5><p>提供CDN服务的服务商，在全国甚至是全球部署着大量的服务器节点（可以叫做「边缘服务器」）。将数据分发到这些遍布各地服务器上作为缓存，让用户访问就近的服务器上的缓存数据，可以起到压力分摊和加速效果。</p>
+<p>但由于节点众多，更新缓存数据比较缓慢，一般至少是分钟级别。所以一般仅适用于不经常变动的静态数据</p>
+<h5 id="（四）网关（代理）缓存"><a href="#（四）网关（代理）缓存" class="headerlink" title="（四）网关（代理）缓存"></a>（四）网关（代理）缓存</h5><p>我们会在源站前面架一层网关（反向代理、正向代理），为的是做一些安全机制或者统一分流策略的入口</p>
+<p>同时这里也是做缓存的一个好场所。毕竟网关是“业务无关性”的，它能够拦下来的请求，对背后的源站也是很大的受益，减少了大量的CPU运算。</p>
+<p>常用的网关（代理）缓存有Varnish，Squid，Ngnix。一般情况下，简单的缓存运用场景，用nginx即可，因为大部分时候我们会用它来做负载均衡，能少引入一个技术就少一份复杂度嘛。如果是大量的小文件可以使用Varnish，而Squid则相对大而全，运用成本也更高一些。</p>
+<h5 id="（五）进程内缓存"><a href="#（五）进程内缓存" class="headerlink" title="（五）进程内缓存"></a>（五）进程内缓存</h5><p>也就是本地缓存</p>
+<h5 id="（六）进程外缓存"><a href="#（六）进程外缓存" class="headerlink" title="（六）进程外缓存"></a>（六）进程外缓存</h5><p>也就是redis、memcached之类，其他程序远程调用缓存的数据</p>
+<h5 id="（七）数据库缓存"><a href="#（七）数据库缓存" class="headerlink" title="（七）数据库缓存"></a>（七）数据库缓存</h5><p>数据库本身自带缓存模块的，是数据库的内部机制</p>
+<h4 id="三、缓存会导致的问题"><a href="#三、缓存会导致的问题" class="headerlink" title="三、缓存会导致的问题"></a>三、缓存会导致的问题</h4><h5 id="（一）缓存更新"><a href="#（一）缓存更新" class="headerlink" title="（一）缓存更新"></a>（一）缓存更新</h5><h5 id="（二）缓存与数据的一致性"><a href="#（二）缓存与数据的一致性" class="headerlink" title="（二）缓存与数据的一致性"></a>（二）缓存与数据的一致性</h5><h5 id="（三）缓存雪崩"><a href="#（三）缓存雪崩" class="headerlink" title="（三）缓存雪崩"></a>（三）缓存雪崩</h5><h5 id="（四）缓存穿透"><a href="#（四）缓存穿透" class="headerlink" title="（四）缓存穿透"></a>（四）缓存穿透</h5><h5 id="（五）缓存并发"><a href="#（五）缓存并发" class="headerlink" title="（五）缓存并发"></a>（五）缓存并发</h5><h5 id="（六）缓存无底洞"><a href="#（六）缓存无底洞" class="headerlink" title="（六）缓存无底洞"></a>（六）缓存无底洞</h5><h5 id="（七）缓存淘汰"><a href="#（七）缓存淘汰" class="headerlink" title="（七）缓存淘汰"></a>（七）缓存淘汰</h5><h4 id="四、缓存更新问题"><a href="#四、缓存更新问题" class="headerlink" title="四、缓存更新问题"></a>四、缓存更新问题</h4><h5 id="（一）并发量不高的情况"><a href="#（一）并发量不高的情况" class="headerlink" title="（一）并发量不高的情况"></a>（一）并发量不高的情况</h5><p>先更新数据库，在删除缓存，等下一次访问时添加缓存，但是在高并发下更容易造成缓存穿透引起雪崩。</p>
+<h5 id="（二）高并发量的情况-Write-Back"><a href="#（二）高并发量的情况-Write-Back" class="headerlink" title="（二）高并发量的情况(Write Back)"></a>（二）高并发量的情况(Write Back)</h5><p>这种模式是指在只更新缓存，不更新数据库，而我们的缓存会异步地批量更新数据库，类似于Linux文件系统的Page Cache的算法。</p>
+<p>这种策略常被称作“延时写入”。使用该回写策略时，CPU每次对缓存中的数据做出修改，都会对修改的数 据块做上一个“记号”，表示该数据被修改过。这些数据被称作“脏”数据，每当有CPU要求缓存中不存在的数据时，这些脏数据就会写入到内存中。所以，一旦 CPU请求一个缓存中不存在的数据时，就需要两次访问内存的操作，第一次是在内存中检索该数据，第二次则是将脏数据写入到内存中，为新数据让位。</p>
+<p>这种方式的问题在于数据不是强一致性的，而且可能会丢失（因为Unix&#x2F;Linux非正常关机会导致数据丢失）</p>
+<p><img src="https://img-blog.csdnimg.cn/img_convert/1dae7a4076947c3bb5f0239c8b2ac497.png"></p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/fly910905/article/details/122553972">https://blog.csdn.net/fly910905/article/details/122553972</a></p>
+<p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzU2NzEwMDc4OQ==&amp;mid=2247484283&amp;idx=1&amp;sn=46e0423065ce902ff848d718d8ef12d2&amp;scene=19#wechat_redirect">https://mp.weixin.qq.com/s?__biz=MzU2NzEwMDc4OQ==&amp;mid=2247484283&amp;idx=1&amp;sn=46e0423065ce902ff848d718d8ef12d2&amp;scene=19#wechat_redirect</a></p>
+<p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzU2NzEwMDc4OQ==&amp;mid=2247484313&amp;idx=1&amp;sn=a8c8bbad940346b7fb7b01ec9fe70cb4&amp;scene=19#wechat_redirect">https://mp.weixin.qq.com/s?__biz=MzU2NzEwMDc4OQ==&amp;mid=2247484313&amp;idx=1&amp;sn=a8c8bbad940346b7fb7b01ec9fe70cb4&amp;scene=19#wechat_redirect</a></p>
+<p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzU2NzEwMDc4OQ==&amp;mid=2247484338&amp;idx=1&amp;sn=fc1d0283828a2b6f9e66c5f130ff99b1&amp;chksm=fca317a8cbd49ebe3a428f3911c9c80f46b2bfcb658b4ed0e060b6f4ff354cadc1558ea87501&amp;scene=178&amp;cur_album_id=1665526842784612364#rd">https://mp.weixin.qq.com/s?__biz=MzU2NzEwMDc4OQ==&amp;mid=2247484338&amp;idx=1&amp;sn=fc1d0283828a2b6f9e66c5f130ff99b1&amp;chksm=fca317a8cbd49ebe3a428f3911c9c80f46b2bfcb658b4ed0e060b6f4ff354cadc1558ea87501&amp;scene=178&amp;cur_album_id=1665526842784612364#rd</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+              <a href="/tags/%E7%BC%93%E5%AD%98/" rel="tag"># 缓存</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/05/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E5%A5%96%E6%B1%A0%E9%A2%86%E5%8F%96/" rel="prev" title="美食点评网站之奖池领取">
+      <i class="fa fa-chevron-left"></i> 美食点评网站之奖池领取
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/07/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E9%99%84%E5%8A%A0%E5%BA%97%E9%93%BA%E6%90%9C%E7%B4%A2%EF%BC%88%E4%B8%80%EF%BC%89/" rel="next" title="美食点评网站之附加店铺搜索（一）">
+      美食点评网站之附加店铺搜索（一） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%93%E5%AD%98%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">缓存介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%BC%93%E5%AD%98%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-number">1.0.1.</span> <span class="nav-text">一、缓存的作用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%BF%AB%E9%80%9F%E8%AF%BB%E5%8F%96"><span class="nav-number">1.0.1.1.</span> <span class="nav-text">（一）快速读取</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E9%A2%84%E8%AF%BB%E5%8F%96"><span class="nav-number">1.0.1.2.</span> <span class="nav-text">（二）预读取</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E5%BB%B6%E8%BF%9F%E5%86%99"><span class="nav-number">1.0.1.3.</span> <span class="nav-text">（三）延迟写</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E7%BC%93%E5%AD%98%E5%BA%94%E8%AF%A5%E4%BD%BF%E7%94%A8%E5%9C%A8%E5%93%AA%E9%87%8C"><span class="nav-number">1.0.2.</span> <span class="nav-text">二、缓存应该使用在哪里</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E7%BC%93%E5%AD%98%E6%95%B0%E6%8D%AE%E7%9A%84%E7%89%B9%E6%80%A7"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">（一）缓存数据的特性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E7%BC%93%E5%AD%98%E7%9A%84%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">（二）缓存的应用场景</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E6%B5%8F%E8%A7%88%E5%99%A8%E7%BC%93%E5%AD%98"><span class="nav-number">1.0.2.3.</span> <span class="nav-text">（二）浏览器缓存</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89CDN%E7%BC%93%E5%AD%98"><span class="nav-number">1.0.2.4.</span> <span class="nav-text">（三）CDN缓存</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E7%BD%91%E5%85%B3%EF%BC%88%E4%BB%A3%E7%90%86%EF%BC%89%E7%BC%93%E5%AD%98"><span class="nav-number">1.0.2.5.</span> <span class="nav-text">（四）网关（代理）缓存</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89%E8%BF%9B%E7%A8%8B%E5%86%85%E7%BC%93%E5%AD%98"><span class="nav-number">1.0.2.6.</span> <span class="nav-text">（五）进程内缓存</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%85%AD%EF%BC%89%E8%BF%9B%E7%A8%8B%E5%A4%96%E7%BC%93%E5%AD%98"><span class="nav-number">1.0.2.7.</span> <span class="nav-text">（六）进程外缓存</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%83%EF%BC%89%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%AD%98"><span class="nav-number">1.0.2.8.</span> <span class="nav-text">（七）数据库缓存</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E7%BC%93%E5%AD%98%E4%BC%9A%E5%AF%BC%E8%87%B4%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">1.0.3.</span> <span class="nav-text">三、缓存会导致的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E7%BC%93%E5%AD%98%E6%9B%B4%E6%96%B0"><span class="nav-number">1.0.3.1.</span> <span class="nav-text">（一）缓存更新</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E7%BC%93%E5%AD%98%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">1.0.3.2.</span> <span class="nav-text">（二）缓存与数据的一致性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E7%BC%93%E5%AD%98%E9%9B%AA%E5%B4%A9"><span class="nav-number">1.0.3.3.</span> <span class="nav-text">（三）缓存雪崩</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%9B%9B%EF%BC%89%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F"><span class="nav-number">1.0.3.4.</span> <span class="nav-text">（四）缓存穿透</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%94%EF%BC%89%E7%BC%93%E5%AD%98%E5%B9%B6%E5%8F%91"><span class="nav-number">1.0.3.5.</span> <span class="nav-text">（五）缓存并发</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E5%85%AD%EF%BC%89%E7%BC%93%E5%AD%98%E6%97%A0%E5%BA%95%E6%B4%9E"><span class="nav-number">1.0.3.6.</span> <span class="nav-text">（六）缓存无底洞</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%83%EF%BC%89%E7%BC%93%E5%AD%98%E6%B7%98%E6%B1%B0"><span class="nav-number">1.0.3.7.</span> <span class="nav-text">（七）缓存淘汰</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E7%BC%93%E5%AD%98%E6%9B%B4%E6%96%B0%E9%97%AE%E9%A2%98"><span class="nav-number">1.0.4.</span> <span class="nav-text">四、缓存更新问题</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%B9%B6%E5%8F%91%E9%87%8F%E4%B8%8D%E9%AB%98%E7%9A%84%E6%83%85%E5%86%B5"><span class="nav-number">1.0.4.1.</span> <span class="nav-text">（一）并发量不高的情况</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E9%AB%98%E5%B9%B6%E5%8F%91%E9%87%8F%E7%9A%84%E6%83%85%E5%86%B5-Write-Back"><span class="nav-number">1.0.4.2.</span> <span class="nav-text">（二）高并发量的情况(Write Back)</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

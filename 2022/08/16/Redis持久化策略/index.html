@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Redis 持久化策略Redis4.0之后,Redis有RDB持久化、AOF持久化、RDB-AOF混合持久化这三种持久化方式。  一、RDB策略RDB持久化是**将当前进程数据以生成快照的方式保存到硬盘的过程,**也是Redis默认的持久化机制。RDB会创建一个经过压缩的二进制文件,这个文件以’.rdb‘结尾,内部存储了各个数据库的键值对等信息。 基本原理RDB持久化主要是通过SAVE和BGSAV">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis持久化策略">
+<meta property="og:url" content="http://example.com/2022/08/16/Redis%E6%8C%81%E4%B9%85%E5%8C%96%E7%AD%96%E7%95%A5/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="Redis 持久化策略Redis4.0之后,Redis有RDB持久化、AOF持久化、RDB-AOF混合持久化这三种持久化方式。  一、RDB策略RDB持久化是**将当前进程数据以生成快照的方式保存到硬盘的过程,**也是Redis默认的持久化机制。RDB会创建一个经过压缩的二进制文件,这个文件以’.rdb‘结尾,内部存储了各个数据库的键值对等信息。 基本原理RDB持久化主要是通过SAVE和BGSAV">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-08-16T03:34:32.000Z">
+<meta property="article:modified_time" content="2022-08-16T03:36:00.283Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="redis">
+<meta property="article:tag" content="持久化">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/08/16/Redis%E6%8C%81%E4%B9%85%E5%8C%96%E7%AD%96%E7%95%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis持久化策略 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/16/Redis%E6%8C%81%E4%B9%85%E5%8C%96%E7%AD%96%E7%95%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis持久化策略
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-08-16 11:34:32 / 修改时间：11:36:00" itemprop="dateCreated datePublished" datetime="2022-08-16T11:34:32+08:00">2022-08-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Redis-持久化策略"><a href="#Redis-持久化策略" class="headerlink" title="Redis 持久化策略"></a>Redis 持久化策略</h2><p>Redis4.0之后,Redis有RDB持久化、AOF持久化、RDB-AOF混合持久化这三种持久化方式。 </p>
+<h4 id="一、RDB策略"><a href="#一、RDB策略" class="headerlink" title="一、RDB策略"></a>一、RDB策略</h4><p>RDB持久化是**将当前进程数据以生成快照的方式保存到硬盘的过程,**也是Redis默认的持久化机制。RDB会创建一个经过压缩的二进制文件,这个文件以’.rdb‘结尾,内部存储了各个数据库的键值对等信息。</p>
+<h5 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h5><p>RDB持久化主要是通过SAVE和BGSAVE两个命令对Redis数据库中当前的数据做snapshot并生成rdb文件来实现的。</p>
+<p><strong>save 命令</strong>会一直阻塞当前Redis服务器到RBD过程完成为止,所以这种方式在操作内存比较大的实例时会造成长时间阻塞,因此线上环境不建议使用,该命令已经被废弃。</p>
+<p><strong>gsave命令</strong>会让Redis进程执行fork创建子进程,由子进程负责RBD持久化过程,完成后自动结束,因此只在fork阶段发生阻塞,一般阻塞的时间也不会很长。因此Redis内部所涉及的几乎所有RDB操作都采用了bgsave的方式。</p>
+<p>在Redis启动的时候会检测rdb文件，然后载入rdb文件中未过期的数据到服务器中</p>
+<p>在指定的时间间隔内将内存中的数据集快照写入内存， 也就是行话讲的Snapshot快照，他恢复时是将快照文件直接读到内存中。</p>
+<p>Redis会单独创建一个子进程来持节话，会先将数据写入到一个临时文件中，待持久化过程都结束了。再用这个临时文件替换上次持久化好的文件。整个过程中，主进程都不参与IO操作，这就极高的提升了性能。</p>
+<h5 id="（一）优点"><a href="#（一）优点" class="headerlink" title="（一）优点"></a>（一）优点</h5><p>其生成的紧凑压缩的二进制文件体积小,使用该文件恢复数据的速度非常快</p>
+<h5 id="（二）缺点"><a href="#（二）缺点" class="headerlink" title="（二）缺点"></a>（二）缺点</h5><p>BGSAVE每次运行都要执行fork操作创建子进程,这属于重量级操作,不宜频繁执行,因此,RBD没法做到实时的持久化。 </p>
+<h4 id="二、AOF策略"><a href="#二、AOF策略" class="headerlink" title="二、AOF策略"></a>二、AOF策略</h4><p>Redis 默认不开启。它的出现是为了弥补RDB的不足（数据的不一致性），所以它采用日志的形式来记录每个<strong>写操作</strong>，并<strong>追加</strong>到文件中。Redis 重启的会根据日志文件的内容将写指令从前到后执行一次以完成数据的恢复工作。</p>
+<h5 id="基本原理-1"><a href="#基本原理-1" class="headerlink" title="基本原理"></a>基本原理</h5><p>AOF（Append Only File）持久化是通过将存储每次执行的客户端命令，然后由一个伪客户端来执行这些命令将数据写入到服务器中的方式实现的。一共分为<code>命令追加</code>、<code>文件写入</code>、<code>文件同步</code>三个步骤完成的</p>
+<p><strong>命令追加</strong>：当有修改、删除操作时，服务器会在执行完之后以协议格式将被执行的写命令追加到服务器状态的<code>aof_buf</code>缓冲区的末尾</p>
+<p><strong>文件写入</strong>：Redis的服务进程就是一个事件循环，这个循环中的文件事件负责接收客户端的命令请求。服务器在处理文件事件时可能会执行写命令，同时会追加到<code>aof_buf</code>缓冲区，所以在每结束一次循环之前，都会调用<code>flushAppendOnlyFile</code>函数，将<code>aof_buf</code>缓冲区的数据写入到AOF文件里面。</p>
+<p><strong>文件同步</strong>：<code>flushAppendOnlyFile</code>函数通过服务器配置<code>appendfsync</code>选项的值来决定的将每次循环结束之前<code>aof_buf</code>缓冲区的数据写入到AOF文件后，将以何种方式同步到AOF文件里面：</p>
+<h5 id="（一）优点-1"><a href="#（一）优点-1" class="headerlink" title="（一）优点"></a>（一）优点</h5><p>与RDB持久化可能丢失大量的数据相比,AOF持久化的安全性要高很多。通过使用everysec选项,用户可以将数据丢失的时间窗口限制在1秒之内。</p>
+<h5 id="（二）缺点-1"><a href="#（二）缺点-1" class="headerlink" title="（二）缺点"></a>（二）缺点</h5><ol>
+<li>AOF文件存储的是协议文本,它的体积要比二进制格式的”.rdb”文件大很多。</li>
+<li>AOF需要通过执行AOF文件中的命令来恢复数据库,其恢复速度比RDB慢很多。</li>
+<li>AOF在进行重写时也需要创建子进程,在数据库体积较大时将占用大量资源,会导致服务器的短暂阻塞。</li>
+</ol>
+<p>AOF解决了数据持久化的实时性,是目前Redis主流的持久化方式。</p>
+<h4 id="三、RDB-AOF混合持久化策略"><a href="#三、RDB-AOF混合持久化策略" class="headerlink" title="三、RDB-AOF混合持久化策略"></a>三、RDB-AOF混合持久化策略</h4><p>RDB-AOF混合持久化模式是Redis4.0开始引入的,这种模式是基于AOF持久化构建而来的。用户可以通过配置文件中的“aof-use-rdb-preamble yes”配置项开启AOF混合持久化。</p>
+<p>Redis服务器在执行AOF重写操作时,会像执行BGSAVE命令一样,根据数据库当前的状态生成相应的RDB数据,并将其写入AOF文件中；对于重写之后执行的Redis命令,则以协议文本的方式追加到AOF文件的末尾,即RDB数据之后。 </p>
+<p>通过使用RDB-AOF混合持久化,用户可以同时获得RDB持久化和AOF持久化的优点</p>
+<ol>
+<li>通过AOF文件包含的RDB数据来实现快速的数据恢复操作</li>
+<li>通过AOF文件包含的AOF数据来将丢失数据的时间窗口限制在1s之内</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+              <a href="/tags/%E6%8C%81%E4%B9%85%E5%8C%96/" rel="tag"># 持久化</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/08/15/%E5%8D%8F%E7%A8%8B/" rel="prev" title="协程">
+      <i class="fa fa-chevron-left"></i> 协程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/20/SpringBoot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D%E5%8E%9F%E7%90%86/" rel="next" title="SpringBoot自动装配原理">
+      SpringBoot自动装配原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-%E6%8C%81%E4%B9%85%E5%8C%96%E7%AD%96%E7%95%A5"><span class="nav-number">1.</span> <span class="nav-text">Redis 持久化策略</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81RDB%E7%AD%96%E7%95%A5"><span class="nav-number">1.0.1.</span> <span class="nav-text">一、RDB策略</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="nav-number">1.0.1.1.</span> <span class="nav-text">基本原理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E4%BC%98%E7%82%B9"><span class="nav-number">1.0.1.2.</span> <span class="nav-text">（一）优点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E7%BC%BA%E7%82%B9"><span class="nav-number">1.0.1.3.</span> <span class="nav-text">（二）缺点</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81AOF%E7%AD%96%E7%95%A5"><span class="nav-number">1.0.2.</span> <span class="nav-text">二、AOF策略</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86-1"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">基本原理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E4%BC%98%E7%82%B9-1"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">（一）优点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E7%BC%BA%E7%82%B9-1"><span class="nav-number">1.0.2.3.</span> <span class="nav-text">（二）缺点</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81RDB-AOF%E6%B7%B7%E5%90%88%E6%8C%81%E4%B9%85%E5%8C%96%E7%AD%96%E7%95%A5"><span class="nav-number">1.0.3.</span> <span class="nav-text">三、RDB-AOF混合持久化策略</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

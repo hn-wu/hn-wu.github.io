@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="分布式事务分布式事务就是指**事务的发起者、资源及资源管理器和事务协调者分别位于分布式系统的不同节点中**。银行跨行转账业务是一个典型分布式事务场景，假设A需要跨行转账给B，那么就涉及两个银行的数据，无法通过一个数据库的本地事务保证转账的ACID，只能够通过分布式事务来解决。  分布式事务部分遵循 ACID 规范：  原子性 &amp;&amp; 持久性：严格遵循 一致性：事务过程不一致，事务完成">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式事务">
+<meta property="og:url" content="http://example.com/2022/08/13/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="分布式事务分布式事务就是指**事务的发起者、资源及资源管理器和事务协调者分别位于分布式系统的不同节点中**。银行跨行转账业务是一个典型分布式事务场景，假设A需要跨行转账给B，那么就涉及两个银行的数据，无法通过一个数据库的本地事务保证转账的ACID，只能够通过分布式事务来解决。  分布式事务部分遵循 ACID 规范：  原子性 &amp;&amp; 持久性：严格遵循 一致性：事务过程不一致，事务完成">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://segmentfault.com/img/bVcTlFw">
+<meta property="og:image" content="https://segmentfault.com/img/bVcTlFy">
+<meta property="og:image" content="https://segmentfault.com/img/bVcTlFD">
+<meta property="og:image" content="https://segmentfault.com/img/bVcXBhX">
+<meta property="article:published_time" content="2022-08-13T04:03:59.000Z">
+<meta property="article:modified_time" content="2022-08-13T04:05:37.865Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="事务">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://segmentfault.com/img/bVcTlFw">
+
+<link rel="canonical" href="http://example.com/2022/08/13/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>分布式事务 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/13/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          分布式事务
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-08-13 12:03:59 / 修改时间：12:05:37" itemprop="dateCreated datePublished" datetime="2022-08-13T12:03:59+08:00">2022-08-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h2><pre><code>分布式事务就是指**事务的发起者、资源及资源管理器和事务协调者分别位于分布式系统的不同节点中**。银行跨行转账业务是一个典型分布式事务场景，假设A需要跨行转账给B，那么就涉及两个银行的数据，无法通过一个数据库的本地事务保证转账的ACID，只能够通过分布式事务来解决。
+</code></pre>
+<p>分布式事务<strong>部分遵循</strong> ACID 规范：</p>
+<ul>
+<li>原子性 &amp;&amp; 持久性：严格遵循</li>
+<li>一致性：事务过程不一致，事务完成最终一致</li>
+<li>隔离性：并行事务间不可影响；事务中间结果可见性允许安全放宽</li>
+</ul>
+<p>PS：分布式事务满足CAP的C，但是不满足ACID的C，也被称为最终一致、</p>
+<h3 id="分布式事务解决方案"><a href="#分布式事务解决方案" class="headerlink" title="分布式事务解决方案"></a>分布式事务解决方案</h3><p>AT：非侵入式，容易开发，禁止使用XA事务的场景适用</p>
+<p>XA：非侵入式，容易开发，但对资源长时间锁定，并发度低</p>
+<p>SAGA：长事务适用，对中间结果不敏感的业务场景适用</p>
+<p>TCC：适用于订单类业务，对中间状态有约束的业务</p>
+<ul>
+<li>RM 资源管理器，是业务服务，负责本地数据库的管理</li>
+<li>TM 事务管理器，负责全局事务的状态管理，负责协调各个事务分支的执行</li>
+<li>APP 应用程序，是业务服务，负责全局事务的发起</li>
+</ul>
+<h4 id="一、AT事务模式"><a href="#一、AT事务模式" class="headerlink" title="一、AT事务模式"></a>一、AT事务模式</h4><h5 id="（一）前提"><a href="#（一）前提" class="headerlink" title="（一）前提"></a>（一）前提</h5><ul>
+<li>基于支持本地 ACID 事务的关系型数据库。</li>
+<li>Java 应用，通过 JDBC 访问数据库</li>
+</ul>
+<h5 id="（二）工作机制"><a href="#（二）工作机制" class="headerlink" title="（二）工作机制"></a>（二）工作机制</h5><h5 id="一阶段："><a href="#一阶段：" class="headerlink" title="一阶段："></a><strong>一阶段：</strong></h5><ol>
+<li>RM 侧，用户开启本地事务</li>
+<li>RM 侧，用户每进行一次业务数据修改，假设是一个update语句，那么 AT 会做以下内容：<ol>
+<li>根据update的条件，查询出修改前的数据，该数据称为BeforeImage</li>
+<li>执行update语句，根据BeforeImage中的主键，查询出修改后的数据，该数据称为AfterImage</li>
+<li>将BeforeImage和AfterImage保存到一张undolog表</li>
+<li>将BeforeImage中的主键以及表名，该数据称为lockKey，记录下来，留待后续使用</li>
+</ol>
+</li>
+<li>RM 侧，用户提交本地事务时，AT 会做以下内容：<ol>
+<li>将2.4中记录的所有的lockKey，注册到 TC（即事务管理器seata）上</li>
+<li>3.1中的注册处理会检查 TC 中，是否已存在冲突的主键+表名，如果有冲突，那么AT会睡眠等待后重试，没有冲突则保存</li>
+<li>3.1成功完成后，提交本地事务</li>
+</ol>
+</li>
+</ol>
+<h5 id="二阶段-commit"><a href="#二阶段-commit" class="headerlink" title="二阶段 commit"></a><strong>二阶段 commit</strong></h5><ol>
+<li>TC 会将当前这个全局事务所有相关的lockKey删除</li>
+<li>TC 通知与当前这个全局事务相关的所有业务服务，告知全局事务已成功，可以删除undolog中保存的数据</li>
+<li>RM 收到通知后，删除undolog中的数据</li>
+</ol>
+<h5 id="二阶段-rollback"><a href="#二阶段-rollback" class="headerlink" title="二阶段 rollback"></a>二阶段 rollback</h5><ol>
+<li>TC 通知与当前这个全局事务相关的所有业务服务，告知全局事务失败，执行回滚</li>
+<li>RM 收到通知后，对本地数据的修改进行回滚，回滚原理如下：<ol>
+<li>从undolog中取出修改前后的BeforeImage和AfterImage</li>
+<li>如果AfterImage与数据库中的当前记录校验一致，那么使用BeforeImage中的数据覆盖当前记录</li>
+<li>如果AfterImage与数据库中的当前记录不一致，那么这个时候发生了<strong>脏回滚</strong>，此时需要人工介入解决</li>
+</ol>
+</li>
+<li>TC 待全局事务所有的分支，都完成了回滚，TC 将此全局事务所有的lockKey删除</li>
+</ol>
+<h4 id="二、XA事务模式"><a href="#二、XA事务模式" class="headerlink" title="二、XA事务模式"></a>二、XA事务模式</h4><p>XA是由X&#x2F;Open组织提出的分布式事务的规范，XA规范主要定义了(全局)事务管理器(TM)和(局部)资源管理器(RM)之间的接口。本地的数据库如mysql在XA中扮演的是RM角色，XA的缺点就在于需要锁定资源</p>
+<p>XA一共分为两阶段：</p>
+<p>第一阶段（prepare）：即所有的参与者RM准备执行事务<strong>并锁住需要的资源</strong>。参与者ready时，向TM报告已准备就绪。 </p>
+<p>第二阶段 (commit&#x2F;rollback)：当事务管理者(TM)确认所有参与者(RM)都ready后，向所有参与者发送commit命令。</p>
+<p>XA 事务由一个或多个资源管理器（RM）、一个事务管理器（TM）和一个应用程序（ApplicationProgram）组成。</p>
+<p><img src="https://segmentfault.com/img/bVcTlFw"></p>
+<p>如果有任何一个参与者prepare失败，那么TM会通知所有完成prepare的参与者进行回滚。</p>
+<h4 id="三、SAGA"><a href="#三、SAGA" class="headerlink" title="三、SAGA"></a>三、SAGA</h4><p>​	SAGA原理是将长事务拆分为多个本地短事务，由Saga事务协调器协调，如果正常结束那就正常完成，如果某个步骤失败，则根据相反顺序一次调用补偿操作。</p>
+<p><img src="https://segmentfault.com/img/bVcTlFy"></p>
+<p>Saga一旦到了Cancel阶段，那么Cancel在业务逻辑上是不允许失败了。如果因为网络或者其他临时故障，导致没有返回成功，那么TM会不断重试，直到Cancel返回成功。</p>
+<p>Saga事务的特点：</p>
+<ul>
+<li>并发度高，不用像XA事务那样长期锁定资源</li>
+<li>需要定义正常操作以及补偿操作，开发量比XA大</li>
+<li>一致性较弱，对于转账，可能发生A用户已扣款，最后转账又失败的情况</li>
+</ul>
+<h4 id="四、TCC"><a href="#四、TCC" class="headerlink" title="四、TCC"></a>四、TCC</h4><p>TCC分为3个阶段</p>
+<ul>
+<li>Try 阶段：尝试执行，完成所有业务检查（一致性）, 预留必须业务资源（准隔离性）</li>
+<li>Confirm 阶段：如果所有分支的Try都成功了，则走到Confirm阶段。Confirm真正执行业务，不作任何业务检查，只使用 Try 阶段预留的业务资源</li>
+<li>Cancel 阶段：如果所有分支的Try有一个失败了，则走到Cancel阶段。Cancel释放 Try 阶段预留的业务资源。</li>
+</ul>
+<p><img src="https://segmentfault.com/img/bVcTlFD"></p>
+<p>TCC的Confirm&#x2F;Cancel阶段在业务逻辑上是不允许返回失败的，如果因为网络或者其他临时故障，导致不能返回成功，TM会不断的重试，直到Confirm&#x2F;Cancel返回成功。</p>
+<p>TCC特点如下：</p>
+<ul>
+<li>并发度较高，无长期资源锁定。</li>
+<li>开发量较大，需要提供Try&#x2F;Confirm&#x2F;Cancel接口。</li>
+<li>一致性较好，不会发生SAGA已扣款最后又转账失败的情况</li>
+</ul>
+<h4 id="五、二阶段消息"><a href="#五、二阶段消息" class="headerlink" title="五、二阶段消息"></a>五、二阶段消息</h4><p>dtm首创了一种二阶段消息架构，该架构大大优于本地消息表和事务消息，可以完美替代本地消息表和事务消息。</p>
+<p><img src="https://segmentfault.com/img/bVcXBhX"></p>
+<p>一般情况下，时序图中的5个步骤会正常完成，整个业务按照预期进行，全局事务完成。</p>
+<p>这里面有个新的内容需要解释一下，就是msg的提交是按照两个阶段发起的，第一阶段调用Prepare，第二阶段调用Commit，DTM收到Prepare调用后，不会调用分支事务，而是等待后续的Submit。只有收到了Submit，开始分支调用，最终完成全局事务。</p>
+<p>对比本地消息表和事务消息，二阶段消息有以下优点：</p>
+<ul>
+<li>不需要队列，因此不需要消费者，用户就是简单的调用API</li>
+<li>二阶段消息也有回查，但是回查是框架自动处理，且保证数据正确</li>
+</ul>
+<h4 id="六、最大努力通知"><a href="#六、最大努力通知" class="headerlink" title="六、最大努力通知"></a>六、最大努力通知</h4><p>发起通知方通过一定的机制最大努力将业务处理结果通知到接收方。具体包括：</p>
+<p>有一定的消息重复通知机制。因为接收通知方可能没有接收到通知，此时要有一定的机制对消息重复通知。 消息校对机制。如果尽最大努力也没有通知到接收方，或者接收方消费消息后要再次消费，此时可由接收方主动向通知方查询消息信息来满足需求。 前面介绍的的本地消息表和事务消息都属于可靠消息，与这里介绍的最大努力通知有什么不同？</p>
+<p>可靠消息一致性，发起通知方需要保证将消息发出去，并且将消息发到接收通知方，消息的可靠性关键由发起通知方来保证。</p>
+<p>最大努力通知，发起通知方尽最大的努力将业务处理结果通知为接收通知方，但是可能消息接收不到，此时需要接收通知方主动调用发起通知方的接口查询业务处理结果，通知的可靠性关键在接收通知方。</p>
+<p>解决方案上，最大努力通知需要：</p>
+<ul>
+<li>提供接口，让被通知方能够通过接口查询业务处理结果</li>
+<li>消息队列ACK机制，消息队列按照间隔1min、5min、10min、30min、1h、2h、5h、10h的方式，逐步拉大通知间隔 ，直到达到通知要求的时间窗口上限。之后不再通知</li>
+</ul>
+<p>最大努力通知适用于业务通知类型，例如微信交易的结果，就是通过最大努力通知方式通知各个商户，既有回调通知，也有交易查询接口</p>
+<p>最大努力通知更多是业务上的设计，在基础设施层，可以直接使用二阶段消息，或者事务消息、本地消息表</p>
+<p>参考链接</p>
+<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000040321750">分布式事务最经典的七种解决方案</a></p>
+<p><a target="_blank" rel="noopener" href="https://dtm.pub/practice/theory.html">DTM</a></p>
+<p><a target="_blank" rel="noopener" href="https://seata.io/zh-cn/docs/overview/what-is-seata.html">SEATA</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag"># 分布式</a>
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag"># 事务</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/08/11/%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/" rel="prev" title="进程管理">
+      <i class="fa fa-chevron-left"></i> 进程管理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/14/%E7%BA%BF%E7%A8%8B%E7%AE%A1%E7%90%86/" rel="next" title="线程管理">
+      线程管理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1"><span class="nav-number">1.</span> <span class="nav-text">分布式事务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">1.1.</span> <span class="nav-text">分布式事务解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81AT%E4%BA%8B%E5%8A%A1%E6%A8%A1%E5%BC%8F"><span class="nav-number">1.1.1.</span> <span class="nav-text">一、AT事务模式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E5%89%8D%E6%8F%90"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">（一）前提</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E5%B7%A5%E4%BD%9C%E6%9C%BA%E5%88%B6"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">（二）工作机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%B8%80%E9%98%B6%E6%AE%B5%EF%BC%9A"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">一阶段：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BA%8C%E9%98%B6%E6%AE%B5-commit"><span class="nav-number">1.1.1.4.</span> <span class="nav-text">二阶段 commit</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BA%8C%E9%98%B6%E6%AE%B5-rollback"><span class="nav-number">1.1.1.5.</span> <span class="nav-text">二阶段 rollback</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81XA%E4%BA%8B%E5%8A%A1%E6%A8%A1%E5%BC%8F"><span class="nav-number">1.1.2.</span> <span class="nav-text">二、XA事务模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81SAGA"><span class="nav-number">1.1.3.</span> <span class="nav-text">三、SAGA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E3%80%81TCC"><span class="nav-number">1.1.4.</span> <span class="nav-text">四、TCC</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%B6%88%E6%81%AF"><span class="nav-number">1.1.5.</span> <span class="nav-text">五、二阶段消息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E6%9C%80%E5%A4%A7%E5%8A%AA%E5%8A%9B%E9%80%9A%E7%9F%A5"><span class="nav-number">1.1.6.</span> <span class="nav-text">六、最大努力通知</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

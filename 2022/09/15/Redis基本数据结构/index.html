@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Redis基本数据结构 一、StringString能存储字符串、数字和二进制数据，除了值可以是String以外，所有的键也可以是String。 String最大可以存储大小为2M的数据，其编码分为int、embstr、raw； （一）intint底层实现为long,当数据为整数型并且可以用long类型表示时可以用long存储 （二）embstr和raw embstr底层实现为占一块内存的SDS结">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis基本数据结构">
+<meta property="og:url" content="http://example.com/2022/09/15/Redis%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/index.html">
+<meta property="og:site_name" content="hnwu">
+<meta property="og:description" content="Redis基本数据结构 一、StringString能存储字符串、数字和二进制数据，除了值可以是String以外，所有的键也可以是String。 String最大可以存储大小为2M的数据，其编码分为int、embstr、raw； （一）intint底层实现为long,当数据为整数型并且可以用long类型表示时可以用long存储 （二）embstr和raw embstr底层实现为占一块内存的SDS结">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://static001.geekbang.org/resource/image/f2/2d/f204bdcf37f31c7abcee065daed8dd2d.jpg">
+<meta property="og:image" content="https://pic1.zhimg.com/80/v2-f17fa6c7af801ef83e2a02ed2810e150_1440w.jpg">
+<meta property="og:image" content="https://static001.geekbang.org/resource/image/5d/22/5df168dcafa0db242b0221ab10114e22.jpg">
+<meta property="og:image" content="https://static001.geekbang.org/resource/image/4e/11/4ecf630ea2bce0b11ecc0397487b3111.jpg">
+<meta property="article:published_time" content="2022-09-15T15:01:02.000Z">
+<meta property="article:modified_time" content="2022-09-15T15:02:02.964Z">
+<meta property="article:author" content="hnwu">
+<meta property="article:tag" content="redis">
+<meta property="article:tag" content="数据结构">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://static001.geekbang.org/resource/image/f2/2d/f204bdcf37f31c7abcee065daed8dd2d.jpg">
+
+<link rel="canonical" href="http://example.com/2022/09/15/Redis%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis基本数据结构 | hnwu</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">hnwu</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/15/Redis%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis基本数据结构
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-15 23:01:02 / 修改时间：23:02:02" itemprop="dateCreated datePublished" datetime="2022-09-15T23:01:02+08:00">2022-09-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Redis基本数据结构"><a href="#Redis基本数据结构" class="headerlink" title="Redis基本数据结构"></a>Redis基本数据结构</h2><p><img src="https://static001.geekbang.org/resource/image/f2/2d/f204bdcf37f31c7abcee065daed8dd2d.jpg"></p>
+<h4 id="一、String"><a href="#一、String" class="headerlink" title="一、String"></a>一、String</h4><p>String能存储字符串、数字和二进制数据，除了值可以是String以外，所有的键也可以是String。</p>
+<p>String最大可以存储大小为2M的数据，其编码分为int、embstr、raw；</p>
+<h5 id="（一）int"><a href="#（一）int" class="headerlink" title="（一）int"></a>（一）int</h5><p>int底层实现为long,当数据为整数型并且可以用long类型表示时可以用long存储</p>
+<h5 id="（二）embstr和raw"><a href="#（二）embstr和raw" class="headerlink" title="（二）embstr和raw"></a>（二）embstr和raw</h5><ul>
+<li>embstr底层实现为占一块内存的SDS结构,当数据为长度不超过32字节的字符串时,选择以此结构连续存储元数据和值</li>
+<li>raw底层实现为占两块内存的SDS,用于存储长度超过32字节的字符串数据,此时会在两块内存中分别存储元数据和值。</li>
+</ul>
+<h5 id="（三）SDS"><a href="#（三）SDS" class="headerlink" title="（三）SDS"></a>（三）SDS</h5><ul>
+<li>free 属性的值为 0 ， 表示这个 SDS 没有分配任何未使用空间。</li>
+<li>len 属性的值为 5 ， 表示这个 SDS 保存了一个五字节长的字符串。</li>
+<li>buf 属性是一个 char 类型的数组， 数组的前五个字节分别保存了 ‘R’ 、 ‘e’ 、 ‘d’ 、 ‘i’ 、 ‘s’ 五个字符， 而最后一个字节则保存了空字符 ‘\0’ 。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">sdshdr</span> &#123;</span><br><span class="line">    <span class="comment">// 记录 buf 数组中已使用字节的数量</span></span><br><span class="line">    <span class="comment">// 等于 SDS 所保存字符串的长度</span></span><br><span class="line">    <span class="type">int</span> len;</span><br><span class="line">    <span class="comment">// 记录 buf 数组中未使用字节的数量</span></span><br><span class="line">    <span class="type">int</span> free;</span><br><span class="line">    <span class="comment">// 字节数组，用于保存字符串</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://pic1.zhimg.com/80/v2-f17fa6c7af801ef83e2a02ed2810e150_1440w.jpg"></p>
+<h4 id="二、List"><a href="#二、List" class="headerlink" title="二、List"></a>二、List</h4><p>List保证数据线性有序且元素可重复,它支持lpush、blpush、rpop、brpop等操作，因此可以被当作简单的消息队列使用。</p>
+<p>一个List最多可以存储2^32-1个元素，其编码分为ziplist、linkedlist和quicklist（3.2以前版本没有quicklist）</p>
+<h5 id="（一）ziplist"><a href="#（一）ziplist" class="headerlink" title="（一）ziplist"></a>（一）ziplist</h5><p>ziplist底层实现为压缩列表,当元素数量小于2且所有元素长度都小于64字节时,使用这种结构来存储</p>
+<p>压缩列表实际上类似于一个数组，数组中的每一个元素都对应保存一个数据</p>
+<p>但和数组不同的是，压缩列表在表头有三个字段zlbytes、zltail和zllen，分别表示列表长度、列表尾的偏移量和列表中的entry个数，压缩列表在表尾还有一个zlend，表示列表结束</p>
+<p>在压缩列表中，如果我们要查找定位第一个元素和最后一个元素，可以通过表头三个字段的长度直接定位，复杂度是O(1)。而查找其他元素时，就没有这么高效了，只能逐个查找，此时的复杂度就是O(N)了。</p>
+<p><img src="https://static001.geekbang.org/resource/image/5d/22/5df168dcafa0db242b0221ab10114e22.jpg"></p>
+<h5 id="（二）linkedlist"><a href="#（二）linkedlist" class="headerlink" title="（二）linkedlist"></a>（二）linkedlist</h5><p>linkedlist底层实现为双端链表,当数据不符合ziplist条件时,使用这种结构存储</p>
+<h5 id="（三）quicklist"><a href="#（三）quicklist" class="headerlink" title="（三）quicklist"></a>（三）quicklist</h5><p>在3.2版本之后，List一般采用quicklist的快速列表结构来代替前两种，quicklist使用“ziplist”和“linkedlist”共存的方式。</p>
+<p>当list元素较少的情况下使用“ziplist”，这种储存将分配一段连续的空间，将元素紧密的储存在一起</p>
+<p>当list的元素逐渐变多的时候再分配一段“ziplist”空间用于储存元素，“ziplist”之间通过指针的方式链接在一起形成“LinkedList”。</p>
+<p>采用“quicklist‘方式储存的好处是不必将每个元素都通过引用的方式链接，而是将多个元素先形成”ziplist“再组成”LinkedList“，这样既可以减少用于引用的地址空间，又可以防止内存过于碎片化；默认情况下每个”ziplist”是8KB大小，可由参数“list-max-ziplist-size”控制；并且“ziplist”支持压缩的功能；</p>
+<h4 id="三、Hash"><a href="#三、Hash" class="headerlink" title="三、Hash"></a>三、Hash</h4><p>Hash的值本身也是一个键值对结构,最多能存储2^32-1个元素，其编码分为ziplist、hashtable两种</p>
+<h5 id="（一）ziplist-1"><a href="#（一）ziplist-1" class="headerlink" title="（一）ziplist"></a>（一）ziplist</h5><p>其中ziplist底层实现为压缩列表,当键值对数量小于2,并且所有的键值长度都小于64字节时使用这种结构进行存储；</p>
+<h5 id="（二）hashtable"><a href="#（二）hashtable" class="headerlink" title="（二）hashtable"></a>（二）hashtable</h5><p>hashtable底层实现为字典,当不符合压缩列表存储条件时,使用字典进行存储。</p>
+<p>数组持有链表第一个节点的指针，数据存储在链表；每次获取数据时需要将key利用hash算法计算，然后定位到数组中entry，若该位置为空则表示没有该项数据，若有则遍历该链表查找元素</p>
+<h5 id="（三）hash的扩容机制"><a href="#（三）hash的扩容机制" class="headerlink" title="（三）hash的扩容机制"></a>（三）hash的扩容机制</h5><p>Redis对hash扩容采用了一个非常特别方式：渐进式扩容</p>
+<p>在Redis中正常情况下当元素个数超过数组的大小时开始扩容，但是当Redis正处于bgsave操作时，只有当元素个数达到5倍数组的个数时才开始扩容</p>
+<p>Redis扩容时，同时保存新旧两个hashtable，添加数据时会将新的数据添加到新的hashtable中，并且在添加的同时还会将一部分数据从旧的hashtable中移到新的hashtable中，获取数据时就从两个hashtable中获取</p>
+<p>由于没有对hash操作时，数据就不会移动，旧的hashtable就得不到释放，因此Redis使用了定时任务，定时移到元素；当旧的hashtable为空时就释放该空间；这样做的目的是为了不造成由于大量的元素的移动使得Redis像停止了一样延迟对其它任务的执行（由于Redis是单线程执行命令的）；</p>
+<h4 id="四、Set"><a href="#四、Set" class="headerlink" title="四、Set"></a>四、Set</h4><p>set是无序不可重复的,它支持多个set求交集、并集、差集，适合实现共同关注之类的需求</p>
+<p>set最多可以存储2^32-1个元素，set编码分为inset和hashtable,</p>
+<h5 id="（一）inset"><a href="#（一）inset" class="headerlink" title="（一）inset"></a>（一）inset</h5><p>intset底层实现为整数集合，当所有元素都是整数值且数量不超过2个时使用该结构存储</p>
+<h5 id="（二）hashtable-1"><a href="#（二）hashtable-1" class="headerlink" title="（二）hashtable"></a>（二）hashtable</h5><p>当所有元素数量超过2个时，使用字典结构存储。 </p>
+<h4 id="五、Zset"><a href="#五、Zset" class="headerlink" title="五、Zset"></a>五、Zset</h4><p>zset是有序不可重复的,它通过给每个元素设置一个分数来作为排序的依据</p>
+<p>一个zset最多可以存储2^32-1个元素，其编码分为ziplist和skiplist</p>
+<h5 id="（一）ziplist-2"><a href="#（一）ziplist-2" class="headerlink" title="（一）ziplist"></a>（一）ziplist</h5><p>当元素数量小于128，并且每个元素长度都小于64字节时，使用ziplist压缩列表结构存储</p>
+<h5 id="（二）skiplist"><a href="#（二）skiplist" class="headerlink" title="（二）skiplist"></a>（二）skiplist</h5><p>当元素数量大于128时，采用skiplist的字典+跳表的结构存储</p>
+<p>跳表是在链表的基础上，增加了多级索引，通过索引位置的几个跳转，实现数据的快速定位</p>
+<p><img src="https://static001.geekbang.org/resource/image/4e/11/4ecf630ea2bce0b11ecc0397487b3111.jpg"></p>
+<p>参考链接：</p>
+<p>《Redis设计与实现》</p>
+<p>极客时间——《Redis核心技术与实战》</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/huanghengliang/article/details/125357837">https://blog.csdn.net/huanghengliang/article/details/125357837</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag"># 数据结构</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/07/%E7%BE%8E%E9%A3%9F%E7%82%B9%E8%AF%84%E7%BD%91%E7%AB%99%E4%B9%8B%E9%99%84%E5%8A%A0%E5%BA%97%E9%93%BA%E6%90%9C%E7%B4%A2%EF%BC%88%E4%BA%8C%EF%BC%89/" rel="prev" title="美食点评网站之附加店铺搜索（二）">
+      <i class="fa fa-chevron-left"></i> 美食点评网站之附加店铺搜索（二）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/12/01/Spring%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96/" rel="next" title="Spring循环依赖">
+      Spring循环依赖 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">Redis基本数据结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81String"><span class="nav-number">1.0.1.</span> <span class="nav-text">一、String</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89int"><span class="nav-number">1.0.1.1.</span> <span class="nav-text">（一）int</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89embstr%E5%92%8Craw"><span class="nav-number">1.0.1.2.</span> <span class="nav-text">（二）embstr和raw</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89SDS"><span class="nav-number">1.0.1.3.</span> <span class="nav-text">（三）SDS</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81List"><span class="nav-number">1.0.2.</span> <span class="nav-text">二、List</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89ziplist"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">（一）ziplist</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89linkedlist"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">（二）linkedlist</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89quicklist"><span class="nav-number">1.0.2.3.</span> <span class="nav-text">（三）quicklist</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81Hash"><span class="nav-number">1.0.3.</span> <span class="nav-text">三、Hash</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89ziplist-1"><span class="nav-number">1.0.3.1.</span> <span class="nav-text">（一）ziplist</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89hashtable"><span class="nav-number">1.0.3.2.</span> <span class="nav-text">（二）hashtable</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89hash%E7%9A%84%E6%89%A9%E5%AE%B9%E6%9C%BA%E5%88%B6"><span class="nav-number">1.0.3.3.</span> <span class="nav-text">（三）hash的扩容机制</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E3%80%81Set"><span class="nav-number">1.0.4.</span> <span class="nav-text">四、Set</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89inset"><span class="nav-number">1.0.4.1.</span> <span class="nav-text">（一）inset</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89hashtable-1"><span class="nav-number">1.0.4.2.</span> <span class="nav-text">（二）hashtable</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%94%E3%80%81Zset"><span class="nav-number">1.0.5.</span> <span class="nav-text">五、Zset</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89ziplist-2"><span class="nav-number">1.0.5.1.</span> <span class="nav-text">（一）ziplist</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89skiplist"><span class="nav-number">1.0.5.2.</span> <span class="nav-text">（二）skiplist</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">hnwu</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">hnwu</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
