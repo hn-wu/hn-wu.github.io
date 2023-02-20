@@ -156,6 +156,361 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/14/%E6%B5%8B%E8%AF%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/08/14/%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">测试</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-08-14 16:06:03" itemprop="dateCreated datePublished" datetime="2022-08-14T16:06:03+08:00">2022-08-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-01-12 14:42:19" itemprop="dateModified" datetime="2023-01-12T14:42:19+08:00">2023-01-12</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/14/%E7%BA%BF%E7%A8%8B%E7%AE%A1%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/08/14/%E7%BA%BF%E7%A8%8B%E7%AE%A1%E7%90%86/" class="post-title-link" itemprop="url">线程管理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-08-14 13:51:12 / 修改时间：13:52:11" itemprop="dateCreated datePublished" datetime="2022-08-14T13:51:12+08:00">2022-08-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="线程管理"><a href="#线程管理" class="headerlink" title="线程管理"></a>线程管理</h2><h3 id="一、什么是线程"><a href="#一、什么是线程" class="headerlink" title="一、什么是线程"></a>一、什么是线程</h3><p>线程，有时候被称为轻量级进程，是程序执行流的最小单元</p>
+<p>一个标准的线程由线程ID、当前指令指针(PC)、寄存器集合和堆栈组成</p>
+<p>同一个进程内多个线程之间可以共享代码段、数据段、打开的文件等资源，但每个线程各自都有一套独立的寄存器和栈，这样可以确保线程的控制流是相对独立的。</p>
+<h5 id="线程的优点："><a href="#线程的优点：" class="headerlink" title="线程的优点："></a>线程的优点：</h5><ul>
+<li>一个进程中可以同时存在多个线程；</li>
+<li>各个线程之间可以并发执行；</li>
+<li>各个线程之间可以共享地址空间和文件等资源；</li>
+</ul>
+<h5 id="线程的缺点："><a href="#线程的缺点：" class="headerlink" title="线程的缺点："></a>线程的缺点：</h5><ul>
+<li>当进程中的一个线程崩溃时，会导致其所属进程的所有线程崩溃（JVM中线程奔溃不会造成进程崩溃,<strong>因为 JVM 自定义了自己的信号处理函数，拦截了 SIGSEGV 信号</strong>)</li>
+<li>多线程上下文切换消耗资源</li>
+</ul>
+<h3 id="二、线程与进程的比较"><a href="#二、线程与进程的比较" class="headerlink" title="二、线程与进程的比较"></a>二、线程与进程的比较</h3><h5 id="线程与进程的区别"><a href="#线程与进程的区别" class="headerlink" title="线程与进程的区别"></a>线程与进程的区别</h5><ul>
+<li>进程是资源（包括内存、打开的文件等）分配的基本单位，线程是 CPU 调度的基本单位；</li>
+<li>进程拥有一个完整的资源平台，而线程只独享必不可少的资源，如寄存器和栈；</li>
+<li>线程同样具有就绪、阻塞、执行三种基本状态，同样具有状态之间的转换关系；</li>
+<li>一个线程挂掉，对应的进程挂掉；一个进程挂掉，不会影响其他进程</li>
+<li>进程在执行时拥有独立的内存单元，多个线程共享进程的内存，如代码段、数据段、扩展段；但每个线程拥有自己的栈段和寄存器组</li>
+<li>进程切换时需要刷新TLB并获取新的地址空间，然后切换硬件上下文和内核栈，线程切换时只需要切换硬件上下文和内核栈</li>
+<li>进程之间通信和线程之间通信方式不一样</li>
+</ul>
+<h5 id="相较于进程，线程的优势"><a href="#相较于进程，线程的优势" class="headerlink" title="相较于进程，线程的优势"></a>相较于进程，线程的优势</h5><ul>
+<li>线程的创建时间比进程快，因为进程在创建的过程中，还需要资源管理信息，比如内存管理信息、文件管理信息，而线程在创建的过程中，不会涉及这些资源管理信息，而是共享它们；</li>
+<li>线程的终止时间比进程快，因为线程释放的资源相比进程少很多；</li>
+<li>同一个进程内的线程切换比进程切换快，因为线程具有相同的地址空间（虚拟内存共享），这意味着同一个进程的线程都具有同一个页表，那么在切换的时候不需要切换页表。而对于进程之间的切换，切换的时候要把页表给切换掉，而页表的切换过程开销是比较大的；</li>
+<li>由于同一进程的各线程间共享内存和文件资源，那么在线程之间数据传递的时候，就不需要经过内核了，这就使得线程之间的数据交互效率更高了；</li>
+</ul>
+<h3 id="三、线程的上下文切换"><a href="#三、线程的上下文切换" class="headerlink" title="三、线程的上下文切换"></a>三、线程的上下文切换</h3><h5 id="情况一：当两个线程不是属于同一个进程"><a href="#情况一：当两个线程不是属于同一个进程" class="headerlink" title="情况一：当两个线程不是属于同一个进程"></a>情况一：当两个线程不是属于同一个进程</h5><p>切换的过程就跟进程上下文切换一样</p>
+<h5 id="情况二：当两个线程是属于同一个进程"><a href="#情况二：当两个线程是属于同一个进程" class="headerlink" title="情况二：当两个线程是属于同一个进程"></a>情况二：当两个线程是属于同一个进程</h5><p>因为虚拟内存是共享的，所以在切换时，虚拟内存这些资源就保持不动，只需要切换线程的私有数据、寄存器等不共享的数据以及硬件上下文</p>
+<p>因此线程的上下文切换相比进程，开销要小很多</p>
+<h3 id="四、线程的实现"><a href="#四、线程的实现" class="headerlink" title="四、线程的实现"></a>四、线程的实现</h3><h4 id="（一）用户线程（User-Thread）"><a href="#（一）用户线程（User-Thread）" class="headerlink" title="（一）用户线程（User Thread）"></a>（一）用户线程（User Thread）</h4><p>用户线程是基于用户态的线程管理库来实现的，那么<strong>线程控制块（Thread Control Block, TCB）</strong> 也是在库里面来实现的，对于操作系统而言是看不到这个 TCB 的，它只能看到整个进程的 PCB。</p>
+<p>因此用户线程的整个线程管理和调度，<strong>操作系统是不直接参与的</strong>，而是由用户级线程库函数来完成线程的管理，包括线程的创建、终止、同步和调度等。</p>
+<h5 id="用户线程的优点："><a href="#用户线程的优点：" class="headerlink" title="用户线程的优点："></a>用户线程的<strong>优点</strong>：</h5><ul>
+<li>每个进程都需要有它私有的线程控制块（TCB）列表，用来跟踪记录它各个线程状态信息（PC、栈指针、寄存器），TCB 由用户级线程库函数来维护，可用于不支持线程技术的操作系统；</li>
+<li>用户线程的切换也是由线程库函数来完成的，无需用户态与内核态的切换，所以速度特别快；</li>
+</ul>
+<h5 id="用户线程的缺点："><a href="#用户线程的缺点：" class="headerlink" title="用户线程的缺点："></a>用户线程的<strong>缺点</strong>：</h5><ul>
+<li>由于操作系统不参与线程的调度，如果一个线程发起了系统调用而阻塞，那进程所包含的用户线程都不能执行了。</li>
+<li>当一个线程开始运行后，除非它主动地交出 CPU 的使用权，否则它所在的进程当中的其他线程无法运行，因为用户态的线程没法打断当前运行中的线程，它没有这个特权，只有操作系统才有，但是用户线程不是由操作系统管理的。</li>
+<li>由于时间片分配给进程，故与其他进程比，在多线程执行时，每个线程得到的时间片较少，执行会比较慢；</li>
+</ul>
+<h4 id="（二）内核线程（Kernel-Thread）"><a href="#（二）内核线程（Kernel-Thread）" class="headerlink" title="（二）内核线程（Kernel Thread）"></a>（二）内核线程（Kernel Thread）</h4><p>内核线程是由操作系统管理的，线程对应的 TCB 自然是放在操作系统里的，这样线程的创建、终止和管理都是由操作系统负责。</p>
+<h5 id="内核线程的优点："><a href="#内核线程的优点：" class="headerlink" title="内核线程的优点："></a>内核线程的<strong>优点</strong>：</h5><ul>
+<li>在一个进程当中，如果某个内核线程发起系统调用而被阻塞，并不会影响其他内核线程的运行；</li>
+<li>分配给线程，多线程的进程获得更多的 CPU 运行时间；</li>
+</ul>
+<h5 id="内核线程的缺点："><a href="#内核线程的缺点：" class="headerlink" title="内核线程的缺点："></a>内核线程的<strong>缺点</strong>：</h5><ul>
+<li>在支持内核线程的操作系统中，由内核来维护进程和线程的上下文信息，如 PCB 和 TCB；</li>
+<li>线程的创建、终止和切换都是通过系统调用的方式来进行，因此对于系统来说，系统开销比较大；</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/13/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/08/13/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="post-title-link" itemprop="url">分布式事务</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-08-13 12:03:59 / 修改时间：12:05:37" itemprop="dateCreated datePublished" datetime="2022-08-13T12:03:59+08:00">2022-08-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h2><pre><code>分布式事务就是指**事务的发起者、资源及资源管理器和事务协调者分别位于分布式系统的不同节点中**。银行跨行转账业务是一个典型分布式事务场景，假设A需要跨行转账给B，那么就涉及两个银行的数据，无法通过一个数据库的本地事务保证转账的ACID，只能够通过分布式事务来解决。
+</code></pre>
+<p>分布式事务<strong>部分遵循</strong> ACID 规范：</p>
+<ul>
+<li>原子性 &amp;&amp; 持久性：严格遵循</li>
+<li>一致性：事务过程不一致，事务完成最终一致</li>
+<li>隔离性：并行事务间不可影响；事务中间结果可见性允许安全放宽</li>
+</ul>
+<p>PS：分布式事务满足CAP的C，但是不满足ACID的C，也被称为最终一致、</p>
+<h3 id="分布式事务解决方案"><a href="#分布式事务解决方案" class="headerlink" title="分布式事务解决方案"></a>分布式事务解决方案</h3><p>AT：非侵入式，容易开发，禁止使用XA事务的场景适用</p>
+<p>XA：非侵入式，容易开发，但对资源长时间锁定，并发度低</p>
+<p>SAGA：长事务适用，对中间结果不敏感的业务场景适用</p>
+<p>TCC：适用于订单类业务，对中间状态有约束的业务</p>
+<ul>
+<li>RM 资源管理器，是业务服务，负责本地数据库的管理</li>
+<li>TM 事务管理器，负责全局事务的状态管理，负责协调各个事务分支的执行</li>
+<li>APP 应用程序，是业务服务，负责全局事务的发起</li>
+</ul>
+<h4 id="一、AT事务模式"><a href="#一、AT事务模式" class="headerlink" title="一、AT事务模式"></a>一、AT事务模式</h4><h5 id="（一）前提"><a href="#（一）前提" class="headerlink" title="（一）前提"></a>（一）前提</h5><ul>
+<li>基于支持本地 ACID 事务的关系型数据库。</li>
+<li>Java 应用，通过 JDBC 访问数据库</li>
+</ul>
+<h5 id="（二）工作机制"><a href="#（二）工作机制" class="headerlink" title="（二）工作机制"></a>（二）工作机制</h5><h5 id="一阶段："><a href="#一阶段：" class="headerlink" title="一阶段："></a><strong>一阶段：</strong></h5><ol>
+<li>RM 侧，用户开启本地事务</li>
+<li>RM 侧，用户每进行一次业务数据修改，假设是一个update语句，那么 AT 会做以下内容：<ol>
+<li>根据update的条件，查询出修改前的数据，该数据称为BeforeImage</li>
+<li>执行update语句，根据BeforeImage中的主键，查询出修改后的数据，该数据称为AfterImage</li>
+<li>将BeforeImage和AfterImage保存到一张undolog表</li>
+<li>将BeforeImage中的主键以及表名，该数据称为lockKey，记录下来，留待后续使用</li>
+</ol>
+</li>
+<li>RM 侧，用户提交本地事务时，AT 会做以下内容：<ol>
+<li>将2.4中记录的所有的lockKey，注册到 TC（即事务管理器seata）上</li>
+<li>3.1中的注册处理会检查 TC 中，是否已存在冲突的主键+表名，如果有冲突，那么AT会睡眠等待后重试，没有冲突则保存</li>
+<li>3.1成功完成后，提交本地事务</li>
+</ol>
+</li>
+</ol>
+<h5 id="二阶段-commit"><a href="#二阶段-commit" class="headerlink" title="二阶段 commit"></a><strong>二阶段 commit</strong></h5><ol>
+<li>TC 会将当前这个全局事务所有相关的lockKey删除</li>
+<li>TC 通知与当前这个全局事务相关的所有业务服务，告知全局事务已成功，可以删除undolog中保存的数据</li>
+<li>RM 收到通知后，删除undolog中的数据</li>
+</ol>
+<h5 id="二阶段-rollback"><a href="#二阶段-rollback" class="headerlink" title="二阶段 rollback"></a>二阶段 rollback</h5><ol>
+<li>TC 通知与当前这个全局事务相关的所有业务服务，告知全局事务失败，执行回滚</li>
+<li>RM 收到通知后，对本地数据的修改进行回滚，回滚原理如下：<ol>
+<li>从undolog中取出修改前后的BeforeImage和AfterImage</li>
+<li>如果AfterImage与数据库中的当前记录校验一致，那么使用BeforeImage中的数据覆盖当前记录</li>
+<li>如果AfterImage与数据库中的当前记录不一致，那么这个时候发生了<strong>脏回滚</strong>，此时需要人工介入解决</li>
+</ol>
+</li>
+<li>TC 待全局事务所有的分支，都完成了回滚，TC 将此全局事务所有的lockKey删除</li>
+</ol>
+<h4 id="二、XA事务模式"><a href="#二、XA事务模式" class="headerlink" title="二、XA事务模式"></a>二、XA事务模式</h4><p>XA是由X&#x2F;Open组织提出的分布式事务的规范，XA规范主要定义了(全局)事务管理器(TM)和(局部)资源管理器(RM)之间的接口。本地的数据库如mysql在XA中扮演的是RM角色，XA的缺点就在于需要锁定资源</p>
+<p>XA一共分为两阶段：</p>
+<p>第一阶段（prepare）：即所有的参与者RM准备执行事务<strong>并锁住需要的资源</strong>。参与者ready时，向TM报告已准备就绪。 </p>
+<p>第二阶段 (commit&#x2F;rollback)：当事务管理者(TM)确认所有参与者(RM)都ready后，向所有参与者发送commit命令。</p>
+<p>XA 事务由一个或多个资源管理器（RM）、一个事务管理器（TM）和一个应用程序（ApplicationProgram）组成。</p>
+<p><img src="https://segmentfault.com/img/bVcTlFw"></p>
+<p>如果有任何一个参与者prepare失败，那么TM会通知所有完成prepare的参与者进行回滚。</p>
+<h4 id="三、SAGA"><a href="#三、SAGA" class="headerlink" title="三、SAGA"></a>三、SAGA</h4><p>​	SAGA原理是将长事务拆分为多个本地短事务，由Saga事务协调器协调，如果正常结束那就正常完成，如果某个步骤失败，则根据相反顺序一次调用补偿操作。</p>
+<p><img src="https://segmentfault.com/img/bVcTlFy"></p>
+<p>Saga一旦到了Cancel阶段，那么Cancel在业务逻辑上是不允许失败了。如果因为网络或者其他临时故障，导致没有返回成功，那么TM会不断重试，直到Cancel返回成功。</p>
+<p>Saga事务的特点：</p>
+<ul>
+<li>并发度高，不用像XA事务那样长期锁定资源</li>
+<li>需要定义正常操作以及补偿操作，开发量比XA大</li>
+<li>一致性较弱，对于转账，可能发生A用户已扣款，最后转账又失败的情况</li>
+</ul>
+<h4 id="四、TCC"><a href="#四、TCC" class="headerlink" title="四、TCC"></a>四、TCC</h4><p>TCC分为3个阶段</p>
+<ul>
+<li>Try 阶段：尝试执行，完成所有业务检查（一致性）, 预留必须业务资源（准隔离性）</li>
+<li>Confirm 阶段：如果所有分支的Try都成功了，则走到Confirm阶段。Confirm真正执行业务，不作任何业务检查，只使用 Try 阶段预留的业务资源</li>
+<li>Cancel 阶段：如果所有分支的Try有一个失败了，则走到Cancel阶段。Cancel释放 Try 阶段预留的业务资源。</li>
+</ul>
+<p><img src="https://segmentfault.com/img/bVcTlFD"></p>
+<p>TCC的Confirm&#x2F;Cancel阶段在业务逻辑上是不允许返回失败的，如果因为网络或者其他临时故障，导致不能返回成功，TM会不断的重试，直到Confirm&#x2F;Cancel返回成功。</p>
+<p>TCC特点如下：</p>
+<ul>
+<li>并发度较高，无长期资源锁定。</li>
+<li>开发量较大，需要提供Try&#x2F;Confirm&#x2F;Cancel接口。</li>
+<li>一致性较好，不会发生SAGA已扣款最后又转账失败的情况</li>
+</ul>
+<h4 id="五、二阶段消息"><a href="#五、二阶段消息" class="headerlink" title="五、二阶段消息"></a>五、二阶段消息</h4><p>dtm首创了一种二阶段消息架构，该架构大大优于本地消息表和事务消息，可以完美替代本地消息表和事务消息。</p>
+<p><img src="https://segmentfault.com/img/bVcXBhX"></p>
+<p>一般情况下，时序图中的5个步骤会正常完成，整个业务按照预期进行，全局事务完成。</p>
+<p>这里面有个新的内容需要解释一下，就是msg的提交是按照两个阶段发起的，第一阶段调用Prepare，第二阶段调用Commit，DTM收到Prepare调用后，不会调用分支事务，而是等待后续的Submit。只有收到了Submit，开始分支调用，最终完成全局事务。</p>
+<p>对比本地消息表和事务消息，二阶段消息有以下优点：</p>
+<ul>
+<li>不需要队列，因此不需要消费者，用户就是简单的调用API</li>
+<li>二阶段消息也有回查，但是回查是框架自动处理，且保证数据正确</li>
+</ul>
+<h4 id="六、最大努力通知"><a href="#六、最大努力通知" class="headerlink" title="六、最大努力通知"></a>六、最大努力通知</h4><p>发起通知方通过一定的机制最大努力将业务处理结果通知到接收方。具体包括：</p>
+<p>有一定的消息重复通知机制。因为接收通知方可能没有接收到通知，此时要有一定的机制对消息重复通知。 消息校对机制。如果尽最大努力也没有通知到接收方，或者接收方消费消息后要再次消费，此时可由接收方主动向通知方查询消息信息来满足需求。 前面介绍的的本地消息表和事务消息都属于可靠消息，与这里介绍的最大努力通知有什么不同？</p>
+<p>可靠消息一致性，发起通知方需要保证将消息发出去，并且将消息发到接收通知方，消息的可靠性关键由发起通知方来保证。</p>
+<p>最大努力通知，发起通知方尽最大的努力将业务处理结果通知为接收通知方，但是可能消息接收不到，此时需要接收通知方主动调用发起通知方的接口查询业务处理结果，通知的可靠性关键在接收通知方。</p>
+<p>解决方案上，最大努力通知需要：</p>
+<ul>
+<li>提供接口，让被通知方能够通过接口查询业务处理结果</li>
+<li>消息队列ACK机制，消息队列按照间隔1min、5min、10min、30min、1h、2h、5h、10h的方式，逐步拉大通知间隔 ，直到达到通知要求的时间窗口上限。之后不再通知</li>
+</ul>
+<p>最大努力通知适用于业务通知类型，例如微信交易的结果，就是通过最大努力通知方式通知各个商户，既有回调通知，也有交易查询接口</p>
+<p>最大努力通知更多是业务上的设计，在基础设施层，可以直接使用二阶段消息，或者事务消息、本地消息表</p>
+<p>参考链接</p>
+<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000040321750">分布式事务最经典的七种解决方案</a></p>
+<p><a target="_blank" rel="noopener" href="https://dtm.pub/practice/theory.html">DTM</a></p>
+<p><a target="_blank" rel="noopener" href="https://seata.io/zh-cn/docs/overview/what-is-seata.html">SEATA</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/11/%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1015,440 +1370,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/04/Spring%E4%BA%8B%E5%8A%A1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="hnwu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="hnwu">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/08/04/Spring%E4%BA%8B%E5%8A%A1/" class="post-title-link" itemprop="url">Spring事务</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-08-04 20:33:16 / 修改时间：20:34:29" itemprop="dateCreated datePublished" datetime="2022-08-04T20:33:16+08:00">2022-08-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Spring/" itemprop="url" rel="index"><span itemprop="name">Spring</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">TransactionDefinition</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 返回事务传播行为</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="built_in">int</span> <span class="title">getPropagationBehavior</span>()</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 返回事务的隔离级别，事务管理器根据它来控制另外一个事务可以看到本事务内的哪些数据</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="built_in">int</span> <span class="title">getIsolationLevel</span>()</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 事务超时时间，事务必须在多少秒之内完成</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="built_in">int</span> <span class="title">getTimeout</span>()</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 事务是否只读，事务管理器能够根据这个返回值进行优化，确保事务是只读的</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">boolean <span class="title">isReadOnly</span>()</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 事务名字</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    @Nullable</span><br><span class="line">    <span class="function">String <span class="title">getName</span>()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="一、Spring事务隔离级别"><a href="#一、Spring事务隔离级别" class="headerlink" title="一、Spring事务隔离级别"></a>一、Spring事务隔离级别</h3><p>Spring建议的是使用DEFAULT，就是数据库本身的隔离级别。</p>
-<table>
-<thead>
-<tr>
-<th>隔离级别</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>DEFAULT</td>
-<td>使用数据库本身使用的隔离级别 ORACLE（读已提交） MySQL（可重复读）</td>
-</tr>
-<tr>
-<td>READ_UNCOMITTED</td>
-<td>读未提交（脏读）最低的隔离级别，一切皆有可能。</td>
-</tr>
-<tr>
-<td>READ_COMMITED</td>
-<td>读已提交，ORACLE默认隔离级别，有幻读以及不可重复读风险。</td>
-</tr>
-<tr>
-<td>REPEATABLE_READ</td>
-<td>可重复读，解决不可重复读的隔离级别，但还是有幻读风险。</td>
-</tr>
-<tr>
-<td>SERLALIZABLE</td>
-<td>串行化，最高的事务隔离级别，不管多少事务，挨个运行完一个事务的所有子事务之后才可以执行另外一个事务里面的所有子事务，这样就解决了脏读、不可重复读和幻读的问题了</td>
-</tr>
-</tbody></table>
-<h3 id="二、事务传播"><a href="#二、事务传播" class="headerlink" title="二、事务传播"></a>二、事务传播</h3><p>当事务方法被另一个事务方法调用时，必须指定事务应该如何传播</p>
-<table>
-<thead>
-<tr>
-<th>传播行为</th>
-<th>含义</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>TransactionDefinition.PROPAGATION_REQUIRED</td>
-<td>如果当前没有事务，就新建一个事务，如果已经存在一个事务，则加入到这个事务中。这是最常见的选择。</td>
-</tr>
-<tr>
-<td>TransactionDefinition.PROPAGATION_SUPPORTS</td>
-<td>支持当前事务，如果当前没有事务，就以非事务方式执行。</td>
-</tr>
-<tr>
-<td>TransactionDefinition.PROPAGATION_MANDATORY</td>
-<td>表示该方法必须在事务中运行，如果当前事务不存在，则会抛出一个异常</td>
-</tr>
-<tr>
-<td>TransactionDefinition.PROPAGATION_REQUIRED_NEW</td>
-<td>表示当前方法必须运行在它自己的事务中。一个新的事务将被启动。如果存在当前事务，在该方法执行期间，当前事务会被挂起。</td>
-</tr>
-<tr>
-<td>TransactionDefinition.PROPAGATION_NOT_SUPPORTED</td>
-<td>表示该方法不应该运行在事务中。如果当前存在事务，就把当前事务挂起。</td>
-</tr>
-<tr>
-<td>TransactionDefinition.PROPAGATION_NEVER</td>
-<td>表示当前方法不应该运行在事务上下文中。如果当前正有一个事务在运行，则会抛出异常</td>
-</tr>
-<tr>
-<td>TransactionDefinition.PROPAGATION_NESTED</td>
-<td>如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与PROPAGATION_REQUIRED类似的操作。</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/01/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="hnwu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="hnwu">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/08/01/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" class="post-title-link" itemprop="url">IO多路复用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-08-01 22:38:41 / 修改时间：22:39:32" itemprop="dateCreated datePublished" datetime="2022-08-01T22:38:41+08:00">2022-08-01</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="IO多路复用"><a href="#IO多路复用" class="headerlink" title="IO多路复用"></a>IO多路复用</h2><h3 id="一、select"><a href="#一、select" class="headerlink" title="一、select"></a>一、select</h3><p>它仅仅知道了，有I&#x2F;O事件发生了，却并不知道是哪那几个流（可能有一个，多个，甚至全部），我们只能无差别轮询所有流，找出能读出数据，或者写入数据的流，对他们进行操作。所以<strong>select具有O(n)的无差别轮询复杂度</strong>，同时处理的流越多，无差别轮询时间就越长。</p>
-<h4 id="select调用过程"><a href="#select调用过程" class="headerlink" title="select调用过程"></a>select调用过程</h4><p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2c06b4e5d90e49529f818807edeb3e8e~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp" alt="image.png"> （1）使用copy_from_user从用户空间拷贝fd_set到内核空间</p>
-<p>（2）注册回调函数__pollwait</p>
-<p>（3）遍历所有fd，调用其对应的poll方法（对于socket，这个poll方法是sock_poll，sock_poll根据情况会调用到tcp_poll,udp_poll或者datagram_poll）</p>
-<p>（4）以tcp_poll为例，其核心实现就是__pollwait，也就是上面注册的回调函数。</p>
-<p>（5）__pollwait的主要工作就是把current（当前进程）挂到设备的等待队列中，不同的设备有不同的等待队列，对于tcp_poll来说，其等待队列是sk-&gt;sk_sleep（注意把进程挂到等待队列中并不代表进程已经睡眠了）。在设备收到一条消息（网络设备）或填写完文件数据（磁盘设备）后，会唤醒设备等待队列上睡眠的进程，这时current便被唤醒了。</p>
-<p>（6）poll方法返回时会返回一个描述读写操作是否就绪的mask掩码，根据这个mask掩码给fd_set赋值。</p>
-<p>（7）如果遍历完所有的fd，还没有返回一个可读写的mask掩码，则会调用schedule_timeout是调用select的进程（也就是current）进入睡眠。当设备驱动发生自身资源可读写后，会唤醒其等待队列上睡眠的进程。如果超过一定的超时时间（schedule_timeout指定），还是没人唤醒，则调用select的进程会重新被唤醒获得CPU，进而重新遍历fd，判断有没有就绪的fd。</p>
-<p>（8）把fd_set从内核空间拷贝到用户空间。</p>
-<h4 id="select函数接口"><a href="#select函数接口" class="headerlink" title="select函数接口"></a>select函数接口</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/select.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/time.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> FD_SETSIZE 1024</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NFDBITS (8 * sizeof(unsigned long))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> __FDSET_LONGS (FD_SETSIZE/NFDBITS)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 数据结构 (bitmap)</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> fds_bits[__FDSET_LONGS];</span><br><span class="line">&#125; fd_set;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">select</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">int</span> max_fd, </span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *readset, </span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *writeset, </span></span></span><br><span class="line"><span class="params"><span class="function">    fd_set *exceptset, </span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="keyword">struct</span> timeval *timeout</span></span></span><br><span class="line"><span class="params"><span class="function">)</span>                              <span class="comment">// 返回值就绪描述符的数目</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">FD_ZERO</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>   <span class="comment">// 清空集合</span></span></span><br><span class="line"><span class="function"><span class="title">FD_SET</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>    <span class="comment">// 将给定的描述符加入集合</span></span></span><br><span class="line"><span class="function"><span class="title">FD_ISSET</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>  <span class="comment">// 判断指定描述符是否在集合中 </span></span></span><br><span class="line"><span class="function"><span class="title">FD_CLR</span><span class="params">(<span class="type">int</span> fd, fd_set* fds)</span>    <span class="comment">// 将给定的描述符从文件中删除  </span></span></span><br><span class="line"><span class="function">复制代码</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="select使用示例"><a href="#select使用示例" class="headerlink" title="select使用示例"></a>select使用示例</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 这里进行一些初始化的设置，</span></span><br><span class="line"><span class="comment">   * 包括socket建立，地址的设置等,</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"></span><br><span class="line">  fd_set read_fs, write_fs;</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">timeval</span> timeout;</span><br><span class="line">  <span class="type">int</span> max = <span class="number">0</span>;  <span class="comment">// 用于记录最大的fd，在轮询中时刻更新即可</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 初始化比特位</span></span><br><span class="line">  <span class="built_in">FD_ZERO</span>(&amp;read_fs);</span><br><span class="line">  <span class="built_in">FD_ZERO</span>(&amp;write_fs);</span><br><span class="line"></span><br><span class="line">  <span class="type">int</span> nfds = <span class="number">0</span>; <span class="comment">// 记录就绪的事件，可以减少遍历的次数</span></span><br><span class="line">  <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 阻塞获取</span></span><br><span class="line">    <span class="comment">// 每次需要把fd从用户态拷贝到内核态</span></span><br><span class="line">    nfds = <span class="built_in">select</span>(max + <span class="number">1</span>, &amp;read_fd, &amp;write_fd, <span class="literal">NULL</span>, &amp;timeout);</span><br><span class="line">    <span class="comment">// 每次需要遍历所有fd，判断有无读写事件发生</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt;= max &amp;&amp; nfds; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (i == listenfd) &#123;</span><br><span class="line">         --nfds;</span><br><span class="line">         <span class="comment">// 这里处理accept事件</span></span><br><span class="line">         <span class="built_in">FD_SET</span>(i, &amp;read_fd);<span class="comment">//将客户端socket加入到集合中</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (<span class="built_in">FD_ISSET</span>(i, &amp;read_fd)) &#123;</span><br><span class="line">        --nfds;</span><br><span class="line">        <span class="comment">// 这里处理read事件</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (<span class="built_in">FD_ISSET</span>(i, &amp;write_fd)) &#123;</span><br><span class="line">         --nfds;</span><br><span class="line">        <span class="comment">// 这里处理write事件</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<h4 id="select缺点"><a href="#select缺点" class="headerlink" title="select缺点"></a>select缺点</h4><p>select本质上是通过设置或者检查存放fd标志位的数据结构来进行下一步处理。这样所带来的缺点是：</p>
-<ul>
-<li>单个进程所打开的FD是有限制的，通过 <code>FD_SETSIZE</code> 设置，默认1024 ;</li>
-<li>每次调用 select，都需要把 fd 集合从用户态拷贝到内核态，这个开销在 fd 很多时会很大；</li>
-</ul>
-<blockquote>
-<p>需要维护一个用来存放大量fd的数据结构，这样会使得用户空间和内核空间在传递该结构时复制开销大</p>
-</blockquote>
-<ul>
-<li>对 socket 扫描时是线性扫描，采用轮询的方法，效率较低（高并发）</li>
-</ul>
-<blockquote>
-<p>当套接字比较多的时候，每次select()都要通过遍历FD_SETSIZE个Socket来完成调度,不管哪个Socket是活跃的,都遍历一遍。这会浪费很多CPU时间。如果能给套接字注册某个回调函数，当他们活跃时，自动完成相关操作，那就避免了轮询，这正是epoll与kqueue做的。</p>
-</blockquote>
-<h3 id="二、poll"><a href="#二、poll" class="headerlink" title="二、poll"></a>二、poll</h3><p>poll本质上和select没有区别，它将用户传入的数组拷贝到内核空间，然后查询每个fd对应的设备状态， <strong>但是它没有最大连接数的限制</strong>，原因是它是基于链表来存储的.</p>
-<h4 id="poll函数接口"><a href="#poll函数接口" class="headerlink" title="poll函数接口"></a>poll函数接口</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;poll.h&gt;</span></span></span><br><span class="line"><span class="comment">// 数据结构</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">pollfd</span> &#123;</span><br><span class="line">    <span class="type">int</span> fd;                         <span class="comment">// 需要监视的文件描述符</span></span><br><span class="line">    <span class="type">short</span> events;                   <span class="comment">// 需要内核监视的事件</span></span><br><span class="line">    <span class="type">short</span> revents;                  <span class="comment">// 实际发生的事件</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">poll</span><span class="params">(<span class="keyword">struct</span> pollfd fds[], <span class="type">nfds_t</span> nfds, <span class="type">int</span> timeout)</span></span>;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<h4 id="poll使用示例"><a href="#poll使用示例" class="headerlink" title="poll使用示例"></a>poll使用示例</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 先宏定义长度</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MAX_POLLFD_LEN 4096  </span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 在这里进行一些初始化的操作，</span></span><br><span class="line"><span class="comment">   * 比如初始化数据和socket等。</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"></span><br><span class="line">  <span class="type">int</span> nfds = <span class="number">0</span>;</span><br><span class="line">  pollfd fds[MAX_POLLFD_LEN];</span><br><span class="line">  <span class="built_in">memset</span>(fds, <span class="number">0</span>, <span class="built_in">sizeof</span>(fds));</span><br><span class="line">  fds[<span class="number">0</span>].fd = listenfd;</span><br><span class="line">  fds[<span class="number">0</span>].events = POLLRDNORM;</span><br><span class="line">  <span class="type">int</span> max  = <span class="number">0</span>;  <span class="comment">// 队列的实际长度，是一个随时更新的，也可以自定义其他的</span></span><br><span class="line">  <span class="type">int</span> timeout = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="type">int</span> current_size = max;</span><br><span class="line">  <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">    <span class="comment">// 阻塞获取</span></span><br><span class="line">    <span class="comment">// 每次需要把fd从用户态拷贝到内核态</span></span><br><span class="line">    nfds = <span class="built_in">poll</span>(fds, max+<span class="number">1</span>, timeout);</span><br><span class="line">    <span class="keyword">if</span> (fds[<span class="number">0</span>].revents &amp; POLLRDNORM) &#123;</span><br><span class="line">        <span class="comment">// 这里处理accept事件</span></span><br><span class="line">        connfd = <span class="built_in">accept</span>(listenfd);</span><br><span class="line">        <span class="comment">//将新的描述符添加到读描述符集合中</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 每次需要遍历所有fd，判断有无读写事件发生</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt; max; ++i) &#123;     </span><br><span class="line">      <span class="keyword">if</span> (fds[i].revents &amp; POLLRDNORM) &#123; </span><br><span class="line">         sockfd = fds[i].fd</span><br><span class="line">         <span class="keyword">if</span> ((n = <span class="built_in">read</span>(sockfd, buf, MAXLINE)) &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 这里处理read事件</span></span><br><span class="line">            <span class="keyword">if</span> (n == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">close</span>(sockfd);</span><br><span class="line">                fds[i].fd = <span class="number">-1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">         &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">             <span class="comment">// 这里处理write事件     </span></span><br><span class="line">         &#125;</span><br><span class="line">         <span class="keyword">if</span> (--nfds &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;       </span><br><span class="line">         &#125;   </span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<h4 id="poll缺点"><a href="#poll缺点" class="headerlink" title="poll缺点"></a>poll缺点</h4><p><strong>它没有最大连接数的限制</strong>，原因是它是基于链表来存储的，但是同样有缺点：</p>
-<ul>
-<li>每次调用 poll ，都需要把 fd 集合从用户态拷贝到内核态，这个开销在 fd 很多时会很大；</li>
-<li>对 socket 扫描是线性扫描，采用轮询的方法，效率较低（高并发时）</li>
-</ul>
-<h3 id="三、epoll"><a href="#三、epoll" class="headerlink" title="三、epoll"></a>三、epoll</h3><p><strong>epoll可以理解为event poll</strong>，不同于忙轮询和无差别轮询，epoll会把哪个流发生了怎样的I&#x2F;O事件通知我们。所以我们说epoll实际上是<strong>事件驱动（每个事件关联上fd）</strong>的，此时我们对这些流的操作都是有意义的。（复杂度降低到了O(1)）</p>
-<h4 id="epoll函数接口"><a href="#epoll函数接口" class="headerlink" title="epoll函数接口"></a>epoll函数接口</h4><p>当某一进程调用epoll_create方法时，Linux内核会创建一个eventpoll结构体，这个结构体中有两个成员与epoll的使用方式密切相关。eventpoll结构体如下所示：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/epoll.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 数据结构</span></span><br><span class="line"><span class="comment">// 每一个epoll对象都有一个独立的eventpoll结构体</span></span><br><span class="line"><span class="comment">// 用于存放通过epoll_ctl方法向epoll对象中添加进来的事件</span></span><br><span class="line"><span class="comment">// epoll_wait检查是否有事件发生时，只需要检查eventpoll对象中的rdlist双链表中是否有epitem元素即可</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">eventpoll</span> &#123;</span><br><span class="line">    <span class="comment">/*红黑树的根节点，这颗树中存储着所有添加到epoll中的需要监控的事件*/</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">rb_root</span>  rbr;</span><br><span class="line">    <span class="comment">/*双链表中则存放着将要通过epoll_wait返回给用户的满足条件的事件*/</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">list_head</span> rdlist;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// API</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_create</span><span class="params">(<span class="type">int</span> size)</span></span>; <span class="comment">// 内核中间加一个 ep 对象，把所有需要监听的 socket 都放到 ep 对象中</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="type">int</span> epfd, <span class="type">int</span> op, <span class="type">int</span> fd, <span class="keyword">struct</span> epoll_event *event)</span></span>; <span class="comment">// epoll_ctl 负责把 socket 增加、删除到内核红黑树</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="type">int</span> epfd, <span class="keyword">struct</span> epoll_event * events, <span class="type">int</span> maxevents, <span class="type">int</span> timeout)</span></span>;<span class="comment">// epoll_wait 负责检测可读队列，没有可读 socket 则阻塞进程</span></span><br><span class="line"></span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<p>每一个epoll对象都有一个独立的eventpoll结构体，用于存放通过epoll_ctl方法向epoll对象中添加进来的事件。这些事件都会挂载在红黑树中，如此，重复添加的事件就可以通过红黑树而高效的识别出来(红黑树的插入时间效率是lgn，其中n为红黑树元素个数)。</p>
-<p>而所有添加到epoll中的事件都会与设备(网卡)驱动程序建立回调关系，也就是说，当相应的事件发生时会调用这个回调方法。这个回调方法在内核中叫ep_poll_callback,它会将发生的事件添加到rdlist双链表中。</p>
-<p>在epoll中，对于每一个事件，都会建立一个epitem结构体，如下所示：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">epitem</span>&#123;</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">rb_node</span>  rbn;<span class="comment">//红黑树节点</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">list_head</span>    rdllink;<span class="comment">//双向链表节点</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">epoll_filefd</span>  ffd;  <span class="comment">//事件句柄信息</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">eventpoll</span> *ep;    <span class="comment">//指向其所属的eventpoll对象</span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">epoll_event</span> event; <span class="comment">//期待发生的事件类型</span></span><br><span class="line">&#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<p>当调用epoll_wait检查是否有事件发生时，只需要检查eventpoll对象中的rdlist双链表中是否有epitem元素即可。如果rdlist不为空，则把发生的事件复制到用户态，同时将事件数量返回给用户。</p>
-<p><img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/0727a97bb2e94019b69cbf8d3a951093~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp" alt="image.png"> <strong>从上面的讲解可知：通过红黑树和双链表数据结构，并结合回调机制，造就了epoll的高效。</strong> 讲解完了Epoll的机理，我们便能很容易掌握epoll的用法了。一句话描述就是：三步曲。</p>
-<ul>
-<li>第一步：epoll_create()系统调用。此调用返回一个句柄，之后所有的使用都依靠这个句柄来标识。</li>
-<li>第二步：epoll_ctl()系统调用。通过此调用向epoll对象中添加、删除、修改感兴趣的事件，返回0标识成功，返回-1表示失败。</li>
-<li>第三部：epoll_wait()系统调用。通过此调用收集收集在epoll监控中已经发生的事件。</li>
-</ul>
-<h4 id="epoll使用示例"><a href="#epoll使用示例" class="headerlink" title="epoll使用示例"></a>epoll使用示例</h4><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">   <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 在这里进行一些初始化的操作，</span></span><br><span class="line"><span class="comment">   * 比如初始化数据和socket等。</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 内核中创建ep对象</span></span><br><span class="line">    epfd=<span class="built_in">epoll_create</span>(<span class="number">256</span>);</span><br><span class="line">    <span class="comment">// 需要监听的socket放到ep中</span></span><br><span class="line">    <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_ADD,listenfd,&amp;ev);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">while</span>(<span class="number">1</span>) &#123;</span><br><span class="line">      <span class="comment">// 阻塞获取</span></span><br><span class="line">      nfds = <span class="built_in">epoll_wait</span>(epfd,events,<span class="number">20</span>,<span class="number">0</span>);</span><br><span class="line">      <span class="keyword">for</span>(i=<span class="number">0</span>;i&lt;nfds;++i) &#123;</span><br><span class="line">          <span class="keyword">if</span>(events[i].data.fd==listenfd) &#123;</span><br><span class="line">              <span class="comment">// 这里处理accept事件</span></span><br><span class="line">              connfd = <span class="built_in">accept</span>(listenfd);</span><br><span class="line">              <span class="comment">// 接收新连接写到内核对象中</span></span><br><span class="line">              <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_ADD,connfd,&amp;ev);</span><br><span class="line">          &#125; <span class="keyword">else</span> <span class="keyword">if</span> (events[i].events&amp;EPOLLIN) &#123;</span><br><span class="line">              <span class="comment">// 这里处理read事件</span></span><br><span class="line">              <span class="built_in">read</span>(sockfd, BUF, MAXLINE);</span><br><span class="line">              <span class="comment">//读完后准备写</span></span><br><span class="line">              <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_MOD,sockfd,&amp;ev);</span><br><span class="line">          &#125; <span class="keyword">else</span> <span class="keyword">if</span>(events[i].events&amp;EPOLLOUT) &#123;</span><br><span class="line">              <span class="comment">// 这里处理write事件</span></span><br><span class="line">              <span class="built_in">write</span>(sockfd, BUF, n);</span><br><span class="line">              <span class="comment">//写完后准备读</span></span><br><span class="line">              <span class="built_in">epoll_ctl</span>(epfd,EPOLL_CTL_MOD,sockfd,&amp;ev);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<h4 id="epoll的优点"><a href="#epoll的优点" class="headerlink" title="epoll的优点"></a>epoll的优点</h4><ul>
-<li>没有最大并发连接的限制，能打开的FD的上限远大于1024（1G的内存上能监听约10万个端口）；</li>
-<li>效率提升，不是轮询的方式，不会随着FD数目的增加效率下降。只有活跃可用的FD才会调用callback函数；即Epoll最大的优点就在于它只管你“活跃”的连接，而跟连接总数无关，因此在实际的网络环境中，Epoll的效率就会远远高于select和poll；</li>
-<li>内存拷贝，利用mmap()文件映射内存加速与内核空间的消息传递；即epoll使用mmap减少复制开销。</li>
-</ul>
-<h4 id="epoll缺点"><a href="#epoll缺点" class="headerlink" title="epoll缺点"></a>epoll缺点</h4><ul>
-<li>epoll只能工作在 linux 下</li>
-</ul>
-<h4 id="epoll-LT-与-ET-模式的区别"><a href="#epoll-LT-与-ET-模式的区别" class="headerlink" title="epoll LT 与 ET 模式的区别"></a>epoll LT 与 ET 模式的区别</h4><p>epoll 有 EPOLLLT 和 EPOLLET 两种触发模式，LT 是默认的模式，ET 是 “高速” 模式。</p>
-<ul>
-<li>LT 模式下，只要这个 fd 还有数据可读，每次 epoll_wait 都会返回它的事件，提醒用户程序去操作；</li>
-<li>ET 模式下，它只会提示一次，直到下次再有数据流入之前都不会再提示了，无论 fd 中是否还有数据可读。所以在 ET 模式下，read 一个 fd 的时候一定要把它的 buffer 读完，或者遇到 EAGIN 错误。</li>
-</ul>
-<p>epoll使用“事件”的就绪通知方式，通过epoll_ctl注册fd，一旦该fd就绪，内核就会采用类似callback的回调机制来激活该fd，epoll_wait便可以收到通知。</p>
-<h3 id="四、select-x2F-poll-x2F-epoll之间的区别"><a href="#四、select-x2F-poll-x2F-epoll之间的区别" class="headerlink" title="四、select&#x2F;poll&#x2F;epoll之间的区别"></a>四、select&#x2F;poll&#x2F;epoll之间的区别</h3><p>select，poll，epoll都是IO多路复用的机制。I&#x2F;O多路复用就通过一种机制，可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作。<strong>但select，poll，epoll本质上都是同步I&#x2F;O，因为他们都需要在读写事件就绪后自己负责进行读写，也就是说这个读写过程是阻塞的</strong>，而异步I&#x2F;O则无需自己负责进行读写，异步I&#x2F;O的实现会负责把数据从内核拷贝到用户空间。 </p>
-<p>epoll跟select都能提供多路I&#x2F;O复用的解决方案。在现在的Linux内核里有都能够支持，其中epoll是Linux所特有，而select则应该是POSIX所规定，一般操作系统均有实现</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th><strong>select</strong></th>
-<th><strong>poll</strong></th>
-<th><strong>epoll</strong></th>
-</tr>
-</thead>
-<tbody><tr>
-<td>操作方式</td>
-<td>遍历</td>
-<td>遍历</td>
-<td>回调</td>
-</tr>
-<tr>
-<td>数据结构</td>
-<td>bitmap</td>
-<td>数组</td>
-<td>红黑树</td>
-</tr>
-<tr>
-<td>最大连接数</td>
-<td>1024（x86）或 2048（x64）</td>
-<td>无上限</td>
-<td>无上限</td>
-</tr>
-<tr>
-<td>最大支持文件描述符数</td>
-<td>一般有最大值限制</td>
-<td>65535</td>
-<td>65535</td>
-</tr>
-<tr>
-<td>fd拷贝</td>
-<td>每次调用select，都需要把fd集合从用户态拷贝到内核态</td>
-<td>每次调用poll，都需要把fd集合从用户态拷贝到内核态</td>
-<td>fd首次调用epoll_ctl拷贝，每次调用epoll_wait不拷贝</td>
-</tr>
-<tr>
-<td>工作模式</td>
-<td>LT</td>
-<td>LT</td>
-<td>支持ET高效模式</td>
-</tr>
-<tr>
-<td>工作效率</td>
-<td>每次调用都进行线性遍历，时间复杂度为O(n)</td>
-<td>每次调用都进行线性遍历，时间复杂度为O(n)</td>
-<td>事件通知方式，每当fd就绪，系统注册的回调函数就会被调用，将就绪fd放到readyList里面，时间复杂度O(1)</td>
-</tr>
-</tbody></table>
-<p>epoll是Linux目前大规模网络并发程序开发的首选模型。在绝大多数情况下性能远超select和poll。目前流行的高性能web服务器Nginx正式依赖于epoll提供的高效网络套接字轮询服务。但是，在并发连接不高的情况下，多线程+阻塞I&#x2F;O方式可能性能更好。</p>
-<h4 id="支持一个进程所能打开的最大连接数"><a href="#支持一个进程所能打开的最大连接数" class="headerlink" title="支持一个进程所能打开的最大连接数"></a>支持一个进程所能打开的最大连接数</h4><ul>
-<li>select：单个进程所能打开的最大连接数有FD_SETSIZE宏定义，其大小是32个整数的大小（在32位的机器上，大小就是32_32，同理64位机器上FD_SETSIZE为32_64），当然我们可以对进行修改，然后重新编译内核，但是性能可能会受到影响，这需要进一步的测试。</li>
-<li>poll：poll本质上和select没有区别，但是它没有最大连接数的限制，原因是它是基于链表来存储的。</li>
-<li>epoll：虽然连接数有上限，但是很大，1G内存的机器上可以打开10万左右的连接，2G内存的机器可以打开20万左右的连接。</li>
-</ul>
-<h4 id="FD剧增后带来的IO效率问题"><a href="#FD剧增后带来的IO效率问题" class="headerlink" title="FD剧增后带来的IO效率问题"></a>FD剧增后带来的IO效率问题</h4><ul>
-<li>select：因为每次调用时都会对连接进行线性遍历，所以随着FD的增加会造成遍历速度慢的“线性下降性能问题”。</li>
-<li>poll：同上</li>
-<li>epoll：因为epoll内核中实现是根据每个fd上的callback函数来实现的，只有活跃的socket才会主动调用callback，所以在活跃socket较少的情况下，使用epoll没有前面两者的线性下降的性能问题，但是所有socket都很活跃的情况下，可能会有性能问题。</li>
-</ul>
-<h4 id="消息传递方式"><a href="#消息传递方式" class="headerlink" title="消息传递方式"></a>消息传递方式</h4><ul>
-<li>select：内核需要将消息传递到用户空间，都需要内核拷贝动作</li>
-<li>poll：同上</li>
-<li>epoll：epoll通过内核和用户空间共享一块内存来实现的。</li>
-</ul>
-<h3 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h3><p>select，poll实现需要自己不断轮询所有fd集合，直到设备就绪，期间可能要睡眠和唤醒多次交替。而epoll其实也需要调用epoll_wait不断轮询就绪链表，期间也可能多次睡眠和唤醒交替，但是它是设备就绪时，调用回调函数，把就绪fd放入就绪链表中，并唤醒在epoll_wait中进入睡眠的进程。虽然都要睡眠和交替，但是select和poll在“醒着”的时候要遍历整个fd集合，而epoll在“醒着”的时候只要判断一下就绪链表是否为空就行了，这节省了大量的CPU时间。这就是回调机制带来的性能提升。</p>
-<p>select，poll每次调用都要把fd集合从用户态往内核态拷贝一次，并且要把current往设备等待队列中挂一次，而epoll只要一次拷贝，而且把current往等待队列上挂也只挂一次（在epoll_wait的开始，注意这里的等待队列并不是设备等待队列，只是一个epoll内部定义的等待队列）。这也能节省不少的开销。 :</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/07/31/%E7%BD%91%E7%BB%9CIO%E6%A8%A1%E5%9E%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="hnwu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="hnwu">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/07/31/%E7%BD%91%E7%BB%9CIO%E6%A8%A1%E5%9E%8B/" class="post-title-link" itemprop="url">网络IO模型</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-07-31 22:08:54 / 修改时间：22:10:02" itemprop="dateCreated datePublished" datetime="2022-07-31T22:08:54+08:00">2022-07-31</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="网络IO模型"><a href="#网络IO模型" class="headerlink" title="网络IO模型"></a>网络IO模型</h2><p>recvfrom：用来接收远程主机经指定的socket传来的数据, 并把数据从内核缓冲区复制到应用进程缓冲区。</p>
-<h4 id="一、阻塞IO模型"><a href="#一、阻塞IO模型" class="headerlink" title="一、阻塞IO模型"></a>一、阻塞IO模型</h4><p>​	应用调用recvfrom读取数据时，其系统调用直到数据包到达且被复制到应用缓冲区中或者发送错误时才返回，在此期间一直会等待，进程从调用到返回这段时间内都是被阻塞的称为阻塞IO；</p>
-<p><strong>流程：</strong></p>
-<p>1、应用进程向内核发起recfrom读取数据。</p>
-<p>2、准备数据报（应用进程阻塞）。</p>
-<p>3、将数据从内核负责到应用空间。</p>
-<p>4、复制完成后，返回成功提示。</p>
-<p><img src="https://pic3.zhimg.com/80/v2-abef476a75afe52193be9577dcbcb88a_1440w.jpg"></p>
-<h4 id="二、非阻塞IO模型"><a href="#二、非阻塞IO模型" class="headerlink" title="二、非阻塞IO模型"></a>二、非阻塞IO模型</h4><p>​	同步非阻塞就是 “每隔一会儿瞄一眼进度条” 的轮询（polling）方式，也就是说非阻塞的recvform系统在调用之后，进程并没有被阻塞，内核马上返回给进程，如果数据还没准备好，此时会返回一个error。进程在返回之后，可以干点别的事情，然后再发起recvform系统调用。重复上面的过程，循环往复的进行recvform系统调用。轮询检查内核数据，直到数据准备好，再拷贝数据到进程，进行数据处理需要注意，拷贝数据整个过程，进程仍然是属于阻塞的状态。</p>
-<p><strong>流程：</strong></p>
-<p>1、应用进程向内核发起recvfrom读取数据。</p>
-<p>2、没有数据报准备好，即刻返回EWOULDBLOCK错误码。</p>
-<p>3、应用进程向内核发起recvfrom读取数据。</p>
-<p>4、已有数据包准备好就进行一下 步骤，否则还是返回错误码。</p>
-<p>5、将数据从内核拷贝到用户空间。</p>
-<p>6、完成后，返回成功提示。</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/2062729-69746d536c2781da.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1168/format/webp"></p>
-<h4 id="三、IO复用模型"><a href="#三、IO复用模型" class="headerlink" title="三、IO复用模型"></a>三、IO复用模型</h4><h4 id="四、信号驱动IO模型"><a href="#四、信号驱动IO模型" class="headerlink" title="四、信号驱动IO模型"></a>四、信号驱动IO模型</h4><p>​	首先我们允许Socket进行信号驱动IO,并安装一个信号处理函数，进程继续运行并不阻塞。当数据准备好时，进程会收到一个SIGIO信号，可以在信号处理函数中调用I&#x2F;O操作函数处理数据</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/2062729-222408c76186fd8c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1192/format/webp"></p>
-<h4 id="五、异步IO模型"><a href="#五、异步IO模型" class="headerlink" title="五、异步IO模型"></a>五、异步IO模型</h4><p>​	相对于同步IO，异步IO不是顺序执行。用户进程进行aio_read系统调用之后，无论内核数据是否准备好，都会直接返回给用户进程，然后用户态进程可以去做别的事情。等到socket数据准备好了，内核直接复制数据给进程，然后从内核向进程发送通知。IO两个阶段，进程都是非阻塞的。</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/2062729-5283bdc9d033e956.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1176/format/webp"></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/default-index/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/default-index/">1</a><a class="page-number" href="/default-index/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/default-index/page/4/">4</a><a class="extend next" rel="next" href="/default-index/page/4/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/default-index/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/default-index/">1</a><a class="page-number" href="/default-index/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/default-index/page/4/">4</a><a class="page-number" href="/default-index/page/5/">5</a><a class="extend next" rel="next" href="/default-index/page/4/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1514,14 +1439,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">40</span>
+          <span class="site-state-item-count">43</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">

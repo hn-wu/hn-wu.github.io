@@ -156,6 +156,358 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/04/%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/09/04/%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/" class="post-title-link" itemprop="url">线程的生命周期</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-04 16:08:52 / 修改时间：16:12:48" itemprop="dateCreated datePublished" datetime="2022-09-04T16:08:52+08:00">2022-09-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">Java并发</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="线程的生命周期"><a href="#线程的生命周期" class="headerlink" title="线程的生命周期"></a>线程的生命周期</h2><p>线程的生命周期包括新建（New）、就绪（Ready）、运行（Running）、阻塞（Blocked）和死亡（Dead）5种状态。尤其是当线程启动以后，它不可能一直“霸占”着CPU独自运行，所以CPU需要在多条线程之间切换，于是线程状态也会多次在运行、就绪之间切换。</p>
+<h5 id="（一）新建状态"><a href="#（一）新建状态" class="headerlink" title="（一）新建状态"></a>（一）新建状态</h5><p>当程序使用new关键字创建了一个线程之后，该线程就处于新建状态，此时它和其他的Java对象一样，仅仅由Java虚拟机为其分配内存，并初始化其成员变量的值。此时的线程对象没有表现出任何线程的动态特征，程序也不会执行线程的线程执行体。</p>
+<h5 id="（二）就绪状态"><a href="#（二）就绪状态" class="headerlink" title="（二）就绪状态"></a>（二）就绪状态</h5><p>当线程对象调用了start()方法之后，该线程处于就绪状态，Java虚拟机会为其创建方法调用栈和程序计数器，处于这个状态中的线程并没有开始运行，只是表示该线程可以运行了。至于该线程何时开始运行，取决于JVM里线程调度器的调度。</p>
+<h5 id="（三）运行状态"><a href="#（三）运行状态" class="headerlink" title="（三）运行状态"></a>（三）运行状态</h5><p>如果处于就绪状态的线程获得了CPU，开始执行run()方法的线程执行体，则该线程处于运行状态，如果计算机只有一个CPU，那么在任何时刻只有一个线程处于运行状态。当然，在一个多处理器的机器上，将会有多个线程并行执行；当线程数大于处理器数时，依然会存在多个线程在同一个CPU上轮换的现象。</p>
+<h5 id="（四）阻塞状态"><a href="#（四）阻塞状态" class="headerlink" title="（四）阻塞状态"></a>（四）阻塞状态</h5><p>当一个线程开始运行后，它不可能一直处于运行状态，线程在运行过程中需要被中断，目的是使其他线程获得执行的机会，线程调度的细节取决于底层平台所采用的策略。对于采用抢占式策略的系统而言，系统会给每个可执行的线程一个小时间段来处理任务。当该时间段用完后，系统就会剥夺该线程所占用的资源，让其他线程获得执行的机会。</p>
+<p>当发生如下情况时，线程将会进入阻塞状态：</p>
+<ul>
+<li>线程调用sleep()方法。</li>
+<li>线程调用了一个阻塞式IO方法，在该方法返回之前，该线程被阻塞。</li>
+<li>线程试图获得一个同步监视器，但该同步监视器正被其他线程所持有。</li>
+<li>线程调用wait()方法，在等待某个通知（notify）。</li>
+<li>程序调用了线程的suspend()方法将该线程挂起。但这个方法容易导致死锁，所以应该尽量避免使用该方法。</li>
+</ul>
+<p>针对上面几种情况，当发生如下特定的情况时可以解除上面的阻塞，让该线程重新进入就绪状态：</p>
+<ul>
+<li>调用sleep()方法的线程经过了指定时间(不释放锁)。</li>
+<li>线程调用的阻塞式IO方法已经返回。</li>
+<li>线程成功地获得了试图取得的同步监视器。</li>
+<li>线程正在等待某个通知时，其他线程发出了一个通知。</li>
+<li>处于挂起状态的线程被调用了resume()恢复方法。</li>
+</ul>
+<h5 id="（五）死亡状态"><a href="#（五）死亡状态" class="headerlink" title="（五）死亡状态"></a>（五）死亡状态</h5><p>线程会以如下三种方式结束，结束后就处于死亡状态：</p>
+<ul>
+<li>run()或call()方法执行完成，线程正常结束。</li>
+<li>线程抛出一个未捕获的Exception或Error。</li>
+<li>直接调用该线程的stop()方法来结束该线程，该方法容易导致死锁，通常不推荐使用</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20190812213026533.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQzNDY0ODA5,size_16,color_FFFFFF,t_70" alt="线程的生命周期"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/03/CMS%E5%92%8CG1%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/09/03/CMS%E5%92%8CG1%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" class="post-title-link" itemprop="url">CMS和G1垃圾收集器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-03 20:53:03 / 修改时间：20:54:04" itemprop="dateCreated datePublished" datetime="2022-09-03T20:53:03+08:00">2022-09-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="一、CMS收集器"><a href="#一、CMS收集器" class="headerlink" title="一、CMS收集器"></a>一、CMS收集器</h4><h5 id="（一）CMS介绍"><a href="#（一）CMS介绍" class="headerlink" title="（一）CMS介绍"></a>（一）CMS介绍</h5><p><strong>CMS（Concurrent Mark Sweep）收集器是一种以获取最短回收停顿时间为目标的收集器</strong>。这是因为CMS收集器工作时，GC工作线程与用户线程可以<code>并发</code>执行，以此来达到降低收集停顿时间的目的。</p>
+<p>CMS收集器仅作用于<strong>老年代</strong>的收集，是基于<code>标记-清除算法</code>的，</p>
+<h5 id="（二）CMS运作过程"><a href="#（二）CMS运作过程" class="headerlink" title="（二）CMS运作过程"></a>（二）CMS运作过程</h5><ul>
+<li>初始标记（CMS initial mark）</li>
+<li>并发标记（CMS concurrent mark）</li>
+<li>重新标记（CMS remark）</li>
+<li>并发清除（CMS concurrent sweep）</li>
+</ul>
+<p>其中，<code>初始标记</code>、<code>重新标记</code>这两个步骤仍然需要Stop-the-world。</p>
+<p>初始标记仅仅只是标记一下GC Roots能直接关联到的对象，速度很快，并发标记阶段就是进行GC Roots Tracing的过程</p>
+<p>重新标记阶段则是为了修正并发标记期间因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，这个阶段的停顿时间一般会比初始阶段稍长一些，但远比并发标记的时间短。</p>
+<blockquote>
+<p>CMS以流水线方式拆分了收集周期，将耗时长的操作单元保持与应用线程并发执行。只将那些必需STW才能执行的操作单元单独拎出来，控制这些单元在恰当的时机运行，并能保证仅需短暂的时间就可以完成。这样，在整个收集周期内，只有<strong>两次短暂的暂停（初始标记和重新标记）</strong>，<strong>达到了近似并发的目的</strong>。</p>
+</blockquote>
+<h5 id="（三）CMS优缺点"><a href="#（三）CMS优缺点" class="headerlink" title="（三）CMS优缺点"></a>（三）CMS优缺点</h5><p>CMS收集器<strong>优点</strong>：并发收集、低停顿。</p>
+<p>CMS收集器<strong>缺点</strong>：</p>
+<ul>
+<li>CMS收集器对CPU资源非常敏感。</li>
+<li>CMS收集器无法处理浮动垃圾（Floating Garbage）。</li>
+<li>CMS收集器是基于标记-清除算法，该算法的缺点都有。</li>
+</ul>
+<p>CMS收集器之所以能够做到并发，根本原因在于<strong>采用基于“标记-清除”的算法并对算法过程进行了细粒度的分解</strong>。</p>
+<h4 id="二、G1收集器"><a href="#二、G1收集器" class="headerlink" title="二、G1收集器"></a>二、G1收集器</h4><h5 id="（一）G1介绍"><a href="#（一）G1介绍" class="headerlink" title="（一）G1介绍"></a>（一）G1介绍</h5><p>G1重新定义了堆空间，打破了原有的分代模型，将堆划分为一个个区域。这么做的目的是在进行收集时不必在全堆范围内进行，这是它最显著的特点。区域划分的好处就是带来了停顿时间可预测的收集模型：用户可以指定收集操作在多长时间内完成。即G1提供了接近实时的收集特性。</p>
+<h5 id="（二）G1运行步骤"><a href="#（二）G1运行步骤" class="headerlink" title="（二）G1运行步骤"></a>（二）G1运行步骤</h5><ul>
+<li>初始标记（CMS initial mark）</li>
+<li>并发标记（CMS concurrent mark）</li>
+<li>重新标记（CMS remark）</li>
+<li>筛选清除</li>
+</ul>
+<h5 id="（三）G1特点"><a href="#（三）G1特点" class="headerlink" title="（三）G1特点"></a>（三）G1特点</h5><ul>
+<li><p><strong>并行与并发</strong>：G1能充分利用多CPU、多核环境下的硬件优势，使用多个CPU来缩短Stop-the-world停顿的时间，部分其他收集器原来需要停顿Java线程执行的GC操作，G1收集器仍然可以通过<strong>并发</strong>的方式让Java程序继续运行。</p>
+</li>
+<li><p>分代收集</p>
+</li>
+<li><p>空间整合：与CMS的标记-清除算法不同，G1从整体来看是基于<strong>标记-整理算法</strong>实现的收集器，从局部（两个Region之间）上来看是基于“<strong>复制</strong>”算法实现的。但无论如何，这两种算法都意味着G1运作期间不会产生内存空间碎片，收集后能提供规整的可用内存。<strong>这种特性有利于程序长时间运行，分配大对象时不会因为无法找到连续内存空间而提前触发下一次GC</strong>。</p>
+</li>
+<li><p>可预测的停顿：这是G1相对于CMS的一个优势，降低停顿时间是G1和CMS共同的关注点。</p>
+<p>在G1之前的其他收集器进行收集的范围都是整个新生代或者老年代，而G1不再是这样。在堆的结构设计时，G1打破了以往将收集范围固定在新生代或老年代的模式，G1将堆分成许多相同大小的区域单元，每个单元称为Region。Region是一块地址连续的内存空间</p>
+</li>
+</ul>
+<p>参考链接：</p>
+<p>深入浅出Java虚拟机</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/09/03/%E8%85%BE%E8%AE%AF%E5%AE%89%E5%8D%93%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E5%AE%9E%E6%88%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="hnwu">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hnwu">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/09/03/%E8%85%BE%E8%AE%AF%E5%AE%89%E5%8D%93%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E5%AE%9E%E6%88%98/" class="post-title-link" itemprop="url">《腾讯安卓自动化测试实战》</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-09-03 16:43:30 / 修改时间：16:44:56" itemprop="dateCreated datePublished" datetime="2022-09-03T16:43:30+08:00">2022-09-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%B9%A6%E7%B1%8D%E8%AE%B0%E5%BD%95/" itemprop="url" rel="index"><span itemprop="name">书籍记录</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="一、自动化测试框架及应用领域综述"><a href="#一、自动化测试框架及应用领域综述" class="headerlink" title="一、自动化测试框架及应用领域综述"></a>一、自动化测试框架及应用领域综述</h4><h5 id="（一）自动化测试框架执行流程"><a href="#（一）自动化测试框架执行流程" class="headerlink" title="（一）自动化测试框架执行流程"></a>（一）自动化测试框架执行流程</h5><ol>
+<li>获取坐标或控件并模拟用户操作</li>
+<li>对结果进行判断（截图比较、控件状态比较、日志分析）</li>
+<li>测试报告的产出</li>
+</ol>
+<h5 id="（二）移动端自动化测试应用场景"><a href="#（二）移动端自动化测试应用场景" class="headerlink" title="（二）移动端自动化测试应用场景"></a>（二）移动端自动化测试应用场景</h5><ol>
+<li>性能测试</li>
+<li>稳定性测试</li>
+<li>功能测试</li>
+<li>兼容性测试</li>
+<li>接口测试</li>
+<li>单元测试</li>
+<li>线上监控测试</li>
+</ol>
+<h4 id="二、Monkey基本原理及扩展应用"><a href="#二、Monkey基本原理及扩展应用" class="headerlink" title="二、Monkey基本原理及扩展应用"></a>二、Monkey基本原理及扩展应用</h4><h5 id="（一）Monkey介绍"><a href="#（一）Monkey介绍" class="headerlink" title="（一）Monkey介绍"></a>（一）Monkey介绍</h5><p>Monkey是Google提供的一个命令行工具，可运行在模拟器或实际设备中。它向系统发送伪随机的用户事件，模拟用户的按键输入、触摸屏输入、手势输入等，从而对正在运行的应用程序进行压力测试，目的是看设备多长时间会出现异常，并观察系统的稳定性和容错性能。</p>
+<h5 id="（二）Monkey启动的命令行脚本"><a href="#（二）Monkey启动的命令行脚本" class="headerlink" title="（二）Monkey启动的命令行脚本"></a>（二）Monkey启动的命令行脚本</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// options表示Monkey执行的可配置参数，是可选项</span><br><span class="line">// count表示Monkey执行的事件数，为必选项。</span><br><span class="line">monkey [options] &lt;count&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Options参数类别</p>
+<ol>
+<li>基本配置类参数</li>
+<li>事件类型和频率参数</li>
+<li>约束限制类参数</li>
+<li>调试类参数</li>
+<li>官方隐藏类参数</li>
+</ol>
+<h5 id="（三）Monkey事件"><a href="#（三）Monkey事件" class="headerlink" title="（三）Monkey事件"></a>（三）Monkey事件</h5><p>触摸事件、手势事件、二指缩放事件、轨迹事件、屏幕旋转事件、基本导航事件、主要导航事件、系统按键事件、启动Activity事件、键盘事件、其他类型事件</p>
+<h5 id="（四）Monkey测试实例"><a href="#（四）Monkey测试实例" class="headerlink" title="（四）Monkey测试实例"></a>（四）Monkey测试实例</h5><p>情况一：常规稳定性测试</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">adb  shell  monkey  </span><br><span class="line">//使用-p参数来制定测试应用的包名（Package）</span><br><span class="line">-p  com.xxx.xxx  </span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">--pct-touch  40  </span><br><span class="line">--pct-motion  25  </span><br><span class="line">--pct-appswitch  10  </span><br><span class="line">--pct-rotation  5</span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">-s  12358</span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">--throttle  400  </span><br><span class="line">//使用--pct-xxx参数限制Monkey执行的事件类型和占比</span><br><span class="line">--ignore-crashes</span><br><span class="line">//使用-v指定log的详细级别</span><br><span class="line">--ignore-timeouts</span><br><span class="line">-v 500000</span><br></pre></td></tr></table></figure>
+
+<p>情况二：自定义脚本的稳定性测试</p>
+<p>常规Monkey测试执行的是随机的事件流，如果想让Monkey测试某个特定场景（执行固定的事件流），这时候就需要用到自定义脚本</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">头文件，控制Monkey发送消息的参数，固定写即可</span>        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">脚本类型，一般不用更改</span>        </span><br><span class="line">type=raw events        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">脚本执行次数，但是由于Monkey命令本身可以指定执行次数，所以这里的设置是不生效的        count=10</span>        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">命令执行速率，速率也可以通过Monkey命令设置，这里的设置是不生效的</span>        </span><br><span class="line">speed=1.0        </span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">以下为Monkey命令</span>        </span><br><span class="line">start data&gt;&gt;        </span><br><span class="line">LaunchActivity（pkg_name, cl_name）        </span><br><span class="line">DispatchPress(KEYCODE_HOME)        …</span><br></pre></td></tr></table></figure>
+
+<p>情况三：结合辅助命令，获取更多信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">//logcat日志信息</span><br><span class="line">adb shell logcat -v time&gt;log.txt</span><br><span class="line">//内存信息</span><br><span class="line">adb shell dumpsys meminfo &lt;进程名&gt;</span><br><span class="line">//CPU消耗信息</span><br><span class="line">adb shell top -n 1 |find“进程名”</span><br><span class="line">//电量信息</span><br><span class="line">adb shell dumpsys battery</span><br><span class="line">//GPU信息</span><br><span class="line">adb shell dumpsys gfxinfo &lt;进程名&gt;</span><br><span class="line">//流量信息</span><br><span class="line">adb shell cat/proc/uid_stat/&lt;被测应用的uid&gt;/tcp_rcv</span><br></pre></td></tr></table></figure>
+
+<h5 id="（五）Monkey原理"><a href="#（五）Monkey原理" class="headerlink" title="（五）Monkey原理"></a>（五）Monkey原理</h5><p>见书</p>
+<h4 id="三、Appium框架解析及实践"><a href="#三、Appium框架解析及实践" class="headerlink" title="三、Appium框架解析及实践"></a>三、Appium框架解析及实践</h4><h5 id="（一）Appium介绍"><a href="#（一）Appium介绍" class="headerlink" title="（一）Appium介绍"></a>（一）Appium介绍</h5><p>Appium是一个开源的、跨平台的自动化测试框架，该框架适用于Native Application、Mobile Web Application或Hybrid Application的自动化测试</p>
+<h5 id="（二）Appium原理"><a href="#（二）Appium原理" class="headerlink" title="（二）Appium原理"></a>（二）Appium原理</h5><p>Appium是在手机操作系统自带的测试框架基础上实现的</p>
+<ol>
+<li>Android（版本&gt;4.2）:UIAutomator</li>
+<li>Android（版本≤4.2）:Selendroid</li>
+<li>iOS：UIAutomation</li>
+</ol>
+<h5 id="（三）Appium组成"><a href="#（三）Appium组成" class="headerlink" title="（三）Appium组成"></a>（三）Appium组成</h5><p>Appium由客户端（Appium Client）和服务器（Appium Server）两部分组成，客户端与服务器端之间通过JSON Wire Protocol进行通信。</p>
+<p>（1）Appium服务器。Appium服务器是Appium框架的核心。它是一个基于Node.js实现的HTTP服务器。Appium服务器的主要功能是接受从Appium客户端发起的连接，监听从客户端发送来的命令，将命令发送给bootstrap.jar（iOS手机为bootstrap.js）执行，并将命令的执行结果通过HTTP应答反馈给Appium客户端。</p>
+<p>（2）Bootstrap.jar。Bootstrap.jar是在Android手机上运行的一个应用程序，它在手机上扮演TCP服务器的角色。当Appium服务器需要运行命令时，Appium服务器会与Bootstrap. jar建立TCP通信，并把命令发送给Bootstrap.jar; Bootstrap.jar负责运行测试命令。</p>
+<p>（3）Appium客户端。它主要是指实现了Appium功能的WebDriver协议的客户端Library，它负责与Appium服务器建立连接，并将测试脚本的指令发送到Appium服务器。现有的客户端Library有多种语言的实现，包括Ruby、Python、Java、JavaScript（Node. js）、Object C、PHP和C#。Appium的测试是在这些Library的基础上进行开发的。</p>
+<p>（4）Session。Appium的客户端和服务端之间进行通信都必须在一个Session的上下文中进行。客户端在发起通信的时候首先会发送一个叫作“Desired Capabilities”的JSON对象给服务器。服务器收到该数据后，会创建一个session并将session的ID返回到客户端。之后客户端可以用该session的ID发送后续的命令。</p>
+<p>（5）Desired Capabilities。Desired Capabilities是一组设置的键值对的集合，其中键对应设置的名称，而值对应设置的值。Desired Capabilities主要用于通知Appium服务器建立需要的Session，其中一些设置可以在Appium运行过程中改变Appium服务器的运行行为</p>
+<h5 id="（三）Appium优缺点"><a href="#（三）Appium优缺点" class="headerlink" title="（三）Appium优缺点"></a>（三）Appium优缺点</h5><p>优点：</p>
+<ol>
+<li>Appium支持多种应用程序的测试。可以测试移动Native App、Hybrid App和Web App。</li>
+<li>被测试的应用程序不需要特殊编译。Appium的测试对象一般不需要做特殊修改，如不需要引入任何额外的测试SDK，不需要添加任何的权限，也不要求被测程序与脚本的签名一致，所以可以直接对发布的程序进行测试，但Hybrid App测试可能需要做一点儿修改</li>
+<li>Appium的脚本不限制语言和工具。由于Appium的客户端支持多种测试语言，测试人员可以选择熟悉的语言开发测试脚本，而其他的测试工具一般只能使用特定的语言。</li>
+<li>Appium支持应用之间跳转的测试。它可以用于测试多个应用程序相互交户的场景。</li>
+<li>Appium是一个跨平台的测试框架，可以使用同一个API开发出在Android和iOS上都可以运行的脚本。</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li>该工具必须连接电脑才能实施自动化测试，遇到需要脱机执行的场景就不能满足需求，如电池测试。</li>
+<li>该工具只能用于UI的自动化测试，在很多情况下测试验证只能通过界面来进行。</li>
+</ol>
+<h5 id="（四）Appium运行中的问题"><a href="#（四）Appium运行中的问题" class="headerlink" title="（四）Appium运行中的问题"></a>（四）Appium运行中的问题</h5><p><strong>情况一：</strong></p>
+<p>用例运行时受前一个用例运行的影响，程序状态不正确导致测试脚本运行错误。最常遇到的是前一个脚本异常退出，Session还没有正常结束，可能导致后面用例在建立Session时失败。</p>
+<p>解决方法：首先，用例之间不相互耦合，每一个用例都是一个可独立运行的方法，不依赖任何其他的用例。其次，每个测试脚本都从程序启动状态开始运行，因为中间状态不能确保正确。如果用例会对程序有一些设置，那么每个用例结束后将设置状态恢复到初始状态。最后，在setUp和tearDown方法中初始化与断开Appium的连接，保证Appium服务器是一个清洁的环境。</p>
+<p><strong>情况二：</strong></p>
+<p>脚本包含多个用例，如果用例查找控件失败，则会抛出异常，导致整个脚本都退出了，后续用例将不能正常运行。例如，在刚开始的时候脚本没有做任何异常捕获，当用例出现异常时直接就中断了该脚本的运行，后面的用例就不可能再被运行了。</p>
+<p>笔者的解决方法是将每一个测试脚本的代码都包含在try-except中，保证测试脚本中的异常都能被每个用例捕获，即使当前用例失败了，后续用例也可以正常运行</p>
+<p><strong>情况三：</strong></p>
+<p>在程序运行过程中，未预期的消息框弹出，导致测试脚本运行出错。例如我们比较容易遇到启动地图时提示用户需要开启Wi-Fi或者GPS的情况。</p>
+<p>只能尽量保证测试环境的清洁，在setUp方法中就将Wi-Fi和GPS打开，并在启动地图后稍作等待，然后判断是否存在Dialog，有则清除掉，降低这类问题出现的概率。</p>
+<h4 id="四、安卓-APP速度测试"><a href="#四、安卓-APP速度测试" class="headerlink" title="四、安卓 APP速度测试"></a>四、安卓 APP速度测试</h4><p>见书</p>
+<h4 id="五、BVT测试实例"><a href="#五、BVT测试实例" class="headerlink" title="五、BVT测试实例"></a>五、BVT测试实例</h4><p>见书</p>
+<h4 id="六、兼容性测试实践"><a href="#六、兼容性测试实践" class="headerlink" title="六、兼容性测试实践"></a>六、兼容性测试实践</h4><h5 id="（一）兼容性测试介绍"><a href="#（一）兼容性测试介绍" class="headerlink" title="（一）兼容性测试介绍"></a>（一）兼容性测试介绍</h5><p>兼容性测试主要是指测试Android应用的功能，在市面上所有的Android设备上能否正常运行</p>
+<h5 id="（二）手工测试"><a href="#（二）手工测试" class="headerlink" title="（二）手工测试"></a>（二）手工测试</h5><p>见书</p>
+<h5 id="（三）自动化测试"><a href="#（三）自动化测试" class="headerlink" title="（三）自动化测试"></a>（三）自动化测试</h5><ol>
+<li>安装卸载</li>
+<li>稳定性测试（控件遍历、Monkey随机测试）</li>
+<li>功能测试（自动化+人工验证）</li>
+</ol>
+<h5 id="（四）云平台测试"><a href="#（四）云平台测试" class="headerlink" title="（四）云平台测试"></a>（四）云平台测试</h5>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/30/%E6%8B%A6%E6%88%AA%E5%99%A8%E5%92%8C%E8%BF%87%E6%BB%A4%E5%99%A8/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -826,365 +1178,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/14/%E6%B5%8B%E8%AF%95/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="hnwu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="hnwu">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/08/14/%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">测试</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-08-14 16:06:03" itemprop="dateCreated datePublished" datetime="2022-08-14T16:06:03+08:00">2022-08-14</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-01-12 14:42:19" itemprop="dateModified" datetime="2023-01-12T14:42:19+08:00">2023-01-12</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/14/%E7%BA%BF%E7%A8%8B%E7%AE%A1%E7%90%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="hnwu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="hnwu">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/08/14/%E7%BA%BF%E7%A8%8B%E7%AE%A1%E7%90%86/" class="post-title-link" itemprop="url">线程管理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-08-14 13:51:12 / 修改时间：13:52:11" itemprop="dateCreated datePublished" datetime="2022-08-14T13:51:12+08:00">2022-08-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="线程管理"><a href="#线程管理" class="headerlink" title="线程管理"></a>线程管理</h2><h3 id="一、什么是线程"><a href="#一、什么是线程" class="headerlink" title="一、什么是线程"></a>一、什么是线程</h3><p>线程，有时候被称为轻量级进程，是程序执行流的最小单元</p>
-<p>一个标准的线程由线程ID、当前指令指针(PC)、寄存器集合和堆栈组成</p>
-<p>同一个进程内多个线程之间可以共享代码段、数据段、打开的文件等资源，但每个线程各自都有一套独立的寄存器和栈，这样可以确保线程的控制流是相对独立的。</p>
-<h5 id="线程的优点："><a href="#线程的优点：" class="headerlink" title="线程的优点："></a>线程的优点：</h5><ul>
-<li>一个进程中可以同时存在多个线程；</li>
-<li>各个线程之间可以并发执行；</li>
-<li>各个线程之间可以共享地址空间和文件等资源；</li>
-</ul>
-<h5 id="线程的缺点："><a href="#线程的缺点：" class="headerlink" title="线程的缺点："></a>线程的缺点：</h5><ul>
-<li>当进程中的一个线程崩溃时，会导致其所属进程的所有线程崩溃（JVM中线程奔溃不会造成进程崩溃,<strong>因为 JVM 自定义了自己的信号处理函数，拦截了 SIGSEGV 信号</strong>)</li>
-<li>多线程上下文切换消耗资源</li>
-</ul>
-<h3 id="二、线程与进程的比较"><a href="#二、线程与进程的比较" class="headerlink" title="二、线程与进程的比较"></a>二、线程与进程的比较</h3><h5 id="线程与进程的区别"><a href="#线程与进程的区别" class="headerlink" title="线程与进程的区别"></a>线程与进程的区别</h5><ul>
-<li>进程是资源（包括内存、打开的文件等）分配的基本单位，线程是 CPU 调度的基本单位；</li>
-<li>进程拥有一个完整的资源平台，而线程只独享必不可少的资源，如寄存器和栈；</li>
-<li>线程同样具有就绪、阻塞、执行三种基本状态，同样具有状态之间的转换关系；</li>
-<li>一个线程挂掉，对应的进程挂掉；一个进程挂掉，不会影响其他进程</li>
-<li>进程在执行时拥有独立的内存单元，多个线程共享进程的内存，如代码段、数据段、扩展段；但每个线程拥有自己的栈段和寄存器组</li>
-<li>进程切换时需要刷新TLB并获取新的地址空间，然后切换硬件上下文和内核栈，线程切换时只需要切换硬件上下文和内核栈</li>
-<li>进程之间通信和线程之间通信方式不一样</li>
-</ul>
-<h5 id="相较于进程，线程的优势"><a href="#相较于进程，线程的优势" class="headerlink" title="相较于进程，线程的优势"></a>相较于进程，线程的优势</h5><ul>
-<li>线程的创建时间比进程快，因为进程在创建的过程中，还需要资源管理信息，比如内存管理信息、文件管理信息，而线程在创建的过程中，不会涉及这些资源管理信息，而是共享它们；</li>
-<li>线程的终止时间比进程快，因为线程释放的资源相比进程少很多；</li>
-<li>同一个进程内的线程切换比进程切换快，因为线程具有相同的地址空间（虚拟内存共享），这意味着同一个进程的线程都具有同一个页表，那么在切换的时候不需要切换页表。而对于进程之间的切换，切换的时候要把页表给切换掉，而页表的切换过程开销是比较大的；</li>
-<li>由于同一进程的各线程间共享内存和文件资源，那么在线程之间数据传递的时候，就不需要经过内核了，这就使得线程之间的数据交互效率更高了；</li>
-</ul>
-<h3 id="三、线程的上下文切换"><a href="#三、线程的上下文切换" class="headerlink" title="三、线程的上下文切换"></a>三、线程的上下文切换</h3><h5 id="情况一：当两个线程不是属于同一个进程"><a href="#情况一：当两个线程不是属于同一个进程" class="headerlink" title="情况一：当两个线程不是属于同一个进程"></a>情况一：当两个线程不是属于同一个进程</h5><p>切换的过程就跟进程上下文切换一样</p>
-<h5 id="情况二：当两个线程是属于同一个进程"><a href="#情况二：当两个线程是属于同一个进程" class="headerlink" title="情况二：当两个线程是属于同一个进程"></a>情况二：当两个线程是属于同一个进程</h5><p>因为虚拟内存是共享的，所以在切换时，虚拟内存这些资源就保持不动，只需要切换线程的私有数据、寄存器等不共享的数据以及硬件上下文</p>
-<p>因此线程的上下文切换相比进程，开销要小很多</p>
-<h3 id="四、线程的实现"><a href="#四、线程的实现" class="headerlink" title="四、线程的实现"></a>四、线程的实现</h3><h4 id="（一）用户线程（User-Thread）"><a href="#（一）用户线程（User-Thread）" class="headerlink" title="（一）用户线程（User Thread）"></a>（一）用户线程（User Thread）</h4><p>用户线程是基于用户态的线程管理库来实现的，那么<strong>线程控制块（Thread Control Block, TCB）</strong> 也是在库里面来实现的，对于操作系统而言是看不到这个 TCB 的，它只能看到整个进程的 PCB。</p>
-<p>因此用户线程的整个线程管理和调度，<strong>操作系统是不直接参与的</strong>，而是由用户级线程库函数来完成线程的管理，包括线程的创建、终止、同步和调度等。</p>
-<h5 id="用户线程的优点："><a href="#用户线程的优点：" class="headerlink" title="用户线程的优点："></a>用户线程的<strong>优点</strong>：</h5><ul>
-<li>每个进程都需要有它私有的线程控制块（TCB）列表，用来跟踪记录它各个线程状态信息（PC、栈指针、寄存器），TCB 由用户级线程库函数来维护，可用于不支持线程技术的操作系统；</li>
-<li>用户线程的切换也是由线程库函数来完成的，无需用户态与内核态的切换，所以速度特别快；</li>
-</ul>
-<h5 id="用户线程的缺点："><a href="#用户线程的缺点：" class="headerlink" title="用户线程的缺点："></a>用户线程的<strong>缺点</strong>：</h5><ul>
-<li>由于操作系统不参与线程的调度，如果一个线程发起了系统调用而阻塞，那进程所包含的用户线程都不能执行了。</li>
-<li>当一个线程开始运行后，除非它主动地交出 CPU 的使用权，否则它所在的进程当中的其他线程无法运行，因为用户态的线程没法打断当前运行中的线程，它没有这个特权，只有操作系统才有，但是用户线程不是由操作系统管理的。</li>
-<li>由于时间片分配给进程，故与其他进程比，在多线程执行时，每个线程得到的时间片较少，执行会比较慢；</li>
-</ul>
-<h4 id="（二）内核线程（Kernel-Thread）"><a href="#（二）内核线程（Kernel-Thread）" class="headerlink" title="（二）内核线程（Kernel Thread）"></a>（二）内核线程（Kernel Thread）</h4><p>内核线程是由操作系统管理的，线程对应的 TCB 自然是放在操作系统里的，这样线程的创建、终止和管理都是由操作系统负责。</p>
-<h5 id="内核线程的优点："><a href="#内核线程的优点：" class="headerlink" title="内核线程的优点："></a>内核线程的<strong>优点</strong>：</h5><ul>
-<li>在一个进程当中，如果某个内核线程发起系统调用而被阻塞，并不会影响其他内核线程的运行；</li>
-<li>分配给线程，多线程的进程获得更多的 CPU 运行时间；</li>
-</ul>
-<h5 id="内核线程的缺点："><a href="#内核线程的缺点：" class="headerlink" title="内核线程的缺点："></a>内核线程的<strong>缺点</strong>：</h5><ul>
-<li>在支持内核线程的操作系统中，由内核来维护进程和线程的上下文信息，如 PCB 和 TCB；</li>
-<li>线程的创建、终止和切换都是通过系统调用的方式来进行，因此对于系统来说，系统开销比较大；</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/13/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="hnwu">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="hnwu">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/08/13/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="post-title-link" itemprop="url">分布式事务</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-08-13 12:03:59 / 修改时间：12:05:37" itemprop="dateCreated datePublished" datetime="2022-08-13T12:03:59+08:00">2022-08-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h2><pre><code>分布式事务就是指**事务的发起者、资源及资源管理器和事务协调者分别位于分布式系统的不同节点中**。银行跨行转账业务是一个典型分布式事务场景，假设A需要跨行转账给B，那么就涉及两个银行的数据，无法通过一个数据库的本地事务保证转账的ACID，只能够通过分布式事务来解决。
-</code></pre>
-<p>分布式事务<strong>部分遵循</strong> ACID 规范：</p>
-<ul>
-<li>原子性 &amp;&amp; 持久性：严格遵循</li>
-<li>一致性：事务过程不一致，事务完成最终一致</li>
-<li>隔离性：并行事务间不可影响；事务中间结果可见性允许安全放宽</li>
-</ul>
-<p>PS：分布式事务满足CAP的C，但是不满足ACID的C，也被称为最终一致、</p>
-<h3 id="分布式事务解决方案"><a href="#分布式事务解决方案" class="headerlink" title="分布式事务解决方案"></a>分布式事务解决方案</h3><p>AT：非侵入式，容易开发，禁止使用XA事务的场景适用</p>
-<p>XA：非侵入式，容易开发，但对资源长时间锁定，并发度低</p>
-<p>SAGA：长事务适用，对中间结果不敏感的业务场景适用</p>
-<p>TCC：适用于订单类业务，对中间状态有约束的业务</p>
-<ul>
-<li>RM 资源管理器，是业务服务，负责本地数据库的管理</li>
-<li>TM 事务管理器，负责全局事务的状态管理，负责协调各个事务分支的执行</li>
-<li>APP 应用程序，是业务服务，负责全局事务的发起</li>
-</ul>
-<h4 id="一、AT事务模式"><a href="#一、AT事务模式" class="headerlink" title="一、AT事务模式"></a>一、AT事务模式</h4><h5 id="（一）前提"><a href="#（一）前提" class="headerlink" title="（一）前提"></a>（一）前提</h5><ul>
-<li>基于支持本地 ACID 事务的关系型数据库。</li>
-<li>Java 应用，通过 JDBC 访问数据库</li>
-</ul>
-<h5 id="（二）工作机制"><a href="#（二）工作机制" class="headerlink" title="（二）工作机制"></a>（二）工作机制</h5><h5 id="一阶段："><a href="#一阶段：" class="headerlink" title="一阶段："></a><strong>一阶段：</strong></h5><ol>
-<li>RM 侧，用户开启本地事务</li>
-<li>RM 侧，用户每进行一次业务数据修改，假设是一个update语句，那么 AT 会做以下内容：<ol>
-<li>根据update的条件，查询出修改前的数据，该数据称为BeforeImage</li>
-<li>执行update语句，根据BeforeImage中的主键，查询出修改后的数据，该数据称为AfterImage</li>
-<li>将BeforeImage和AfterImage保存到一张undolog表</li>
-<li>将BeforeImage中的主键以及表名，该数据称为lockKey，记录下来，留待后续使用</li>
-</ol>
-</li>
-<li>RM 侧，用户提交本地事务时，AT 会做以下内容：<ol>
-<li>将2.4中记录的所有的lockKey，注册到 TC（即事务管理器seata）上</li>
-<li>3.1中的注册处理会检查 TC 中，是否已存在冲突的主键+表名，如果有冲突，那么AT会睡眠等待后重试，没有冲突则保存</li>
-<li>3.1成功完成后，提交本地事务</li>
-</ol>
-</li>
-</ol>
-<h5 id="二阶段-commit"><a href="#二阶段-commit" class="headerlink" title="二阶段 commit"></a><strong>二阶段 commit</strong></h5><ol>
-<li>TC 会将当前这个全局事务所有相关的lockKey删除</li>
-<li>TC 通知与当前这个全局事务相关的所有业务服务，告知全局事务已成功，可以删除undolog中保存的数据</li>
-<li>RM 收到通知后，删除undolog中的数据</li>
-</ol>
-<h5 id="二阶段-rollback"><a href="#二阶段-rollback" class="headerlink" title="二阶段 rollback"></a>二阶段 rollback</h5><ol>
-<li>TC 通知与当前这个全局事务相关的所有业务服务，告知全局事务失败，执行回滚</li>
-<li>RM 收到通知后，对本地数据的修改进行回滚，回滚原理如下：<ol>
-<li>从undolog中取出修改前后的BeforeImage和AfterImage</li>
-<li>如果AfterImage与数据库中的当前记录校验一致，那么使用BeforeImage中的数据覆盖当前记录</li>
-<li>如果AfterImage与数据库中的当前记录不一致，那么这个时候发生了<strong>脏回滚</strong>，此时需要人工介入解决</li>
-</ol>
-</li>
-<li>TC 待全局事务所有的分支，都完成了回滚，TC 将此全局事务所有的lockKey删除</li>
-</ol>
-<h4 id="二、XA事务模式"><a href="#二、XA事务模式" class="headerlink" title="二、XA事务模式"></a>二、XA事务模式</h4><p>XA是由X&#x2F;Open组织提出的分布式事务的规范，XA规范主要定义了(全局)事务管理器(TM)和(局部)资源管理器(RM)之间的接口。本地的数据库如mysql在XA中扮演的是RM角色，XA的缺点就在于需要锁定资源</p>
-<p>XA一共分为两阶段：</p>
-<p>第一阶段（prepare）：即所有的参与者RM准备执行事务<strong>并锁住需要的资源</strong>。参与者ready时，向TM报告已准备就绪。 </p>
-<p>第二阶段 (commit&#x2F;rollback)：当事务管理者(TM)确认所有参与者(RM)都ready后，向所有参与者发送commit命令。</p>
-<p>XA 事务由一个或多个资源管理器（RM）、一个事务管理器（TM）和一个应用程序（ApplicationProgram）组成。</p>
-<p><img src="https://segmentfault.com/img/bVcTlFw"></p>
-<p>如果有任何一个参与者prepare失败，那么TM会通知所有完成prepare的参与者进行回滚。</p>
-<h4 id="三、SAGA"><a href="#三、SAGA" class="headerlink" title="三、SAGA"></a>三、SAGA</h4><p>​	SAGA原理是将长事务拆分为多个本地短事务，由Saga事务协调器协调，如果正常结束那就正常完成，如果某个步骤失败，则根据相反顺序一次调用补偿操作。</p>
-<p><img src="https://segmentfault.com/img/bVcTlFy"></p>
-<p>Saga一旦到了Cancel阶段，那么Cancel在业务逻辑上是不允许失败了。如果因为网络或者其他临时故障，导致没有返回成功，那么TM会不断重试，直到Cancel返回成功。</p>
-<p>Saga事务的特点：</p>
-<ul>
-<li>并发度高，不用像XA事务那样长期锁定资源</li>
-<li>需要定义正常操作以及补偿操作，开发量比XA大</li>
-<li>一致性较弱，对于转账，可能发生A用户已扣款，最后转账又失败的情况</li>
-</ul>
-<h4 id="四、TCC"><a href="#四、TCC" class="headerlink" title="四、TCC"></a>四、TCC</h4><p>TCC分为3个阶段</p>
-<ul>
-<li>Try 阶段：尝试执行，完成所有业务检查（一致性）, 预留必须业务资源（准隔离性）</li>
-<li>Confirm 阶段：如果所有分支的Try都成功了，则走到Confirm阶段。Confirm真正执行业务，不作任何业务检查，只使用 Try 阶段预留的业务资源</li>
-<li>Cancel 阶段：如果所有分支的Try有一个失败了，则走到Cancel阶段。Cancel释放 Try 阶段预留的业务资源。</li>
-</ul>
-<p><img src="https://segmentfault.com/img/bVcTlFD"></p>
-<p>TCC的Confirm&#x2F;Cancel阶段在业务逻辑上是不允许返回失败的，如果因为网络或者其他临时故障，导致不能返回成功，TM会不断的重试，直到Confirm&#x2F;Cancel返回成功。</p>
-<p>TCC特点如下：</p>
-<ul>
-<li>并发度较高，无长期资源锁定。</li>
-<li>开发量较大，需要提供Try&#x2F;Confirm&#x2F;Cancel接口。</li>
-<li>一致性较好，不会发生SAGA已扣款最后又转账失败的情况</li>
-</ul>
-<h4 id="五、二阶段消息"><a href="#五、二阶段消息" class="headerlink" title="五、二阶段消息"></a>五、二阶段消息</h4><p>dtm首创了一种二阶段消息架构，该架构大大优于本地消息表和事务消息，可以完美替代本地消息表和事务消息。</p>
-<p><img src="https://segmentfault.com/img/bVcXBhX"></p>
-<p>一般情况下，时序图中的5个步骤会正常完成，整个业务按照预期进行，全局事务完成。</p>
-<p>这里面有个新的内容需要解释一下，就是msg的提交是按照两个阶段发起的，第一阶段调用Prepare，第二阶段调用Commit，DTM收到Prepare调用后，不会调用分支事务，而是等待后续的Submit。只有收到了Submit，开始分支调用，最终完成全局事务。</p>
-<p>对比本地消息表和事务消息，二阶段消息有以下优点：</p>
-<ul>
-<li>不需要队列，因此不需要消费者，用户就是简单的调用API</li>
-<li>二阶段消息也有回查，但是回查是框架自动处理，且保证数据正确</li>
-</ul>
-<h4 id="六、最大努力通知"><a href="#六、最大努力通知" class="headerlink" title="六、最大努力通知"></a>六、最大努力通知</h4><p>发起通知方通过一定的机制最大努力将业务处理结果通知到接收方。具体包括：</p>
-<p>有一定的消息重复通知机制。因为接收通知方可能没有接收到通知，此时要有一定的机制对消息重复通知。 消息校对机制。如果尽最大努力也没有通知到接收方，或者接收方消费消息后要再次消费，此时可由接收方主动向通知方查询消息信息来满足需求。 前面介绍的的本地消息表和事务消息都属于可靠消息，与这里介绍的最大努力通知有什么不同？</p>
-<p>可靠消息一致性，发起通知方需要保证将消息发出去，并且将消息发到接收通知方，消息的可靠性关键由发起通知方来保证。</p>
-<p>最大努力通知，发起通知方尽最大的努力将业务处理结果通知为接收通知方，但是可能消息接收不到，此时需要接收通知方主动调用发起通知方的接口查询业务处理结果，通知的可靠性关键在接收通知方。</p>
-<p>解决方案上，最大努力通知需要：</p>
-<ul>
-<li>提供接口，让被通知方能够通过接口查询业务处理结果</li>
-<li>消息队列ACK机制，消息队列按照间隔1min、5min、10min、30min、1h、2h、5h、10h的方式，逐步拉大通知间隔 ，直到达到通知要求的时间窗口上限。之后不再通知</li>
-</ul>
-<p>最大努力通知适用于业务通知类型，例如微信交易的结果，就是通过最大努力通知方式通知各个商户，既有回调通知，也有交易查询接口</p>
-<p>最大努力通知更多是业务上的设计，在基础设施层，可以直接使用二阶段消息，或者事务消息、本地消息表</p>
-<p>参考链接</p>
-<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000040321750">分布式事务最经典的七种解决方案</a></p>
-<p><a target="_blank" rel="noopener" href="https://dtm.pub/practice/theory.html">DTM</a></p>
-<p><a target="_blank" rel="noopener" href="https://seata.io/zh-cn/docs/overview/what-is-seata.html">SEATA</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/default-index/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/default-index/">1</a><span class="page-number current">2</span><a class="page-number" href="/default-index/page/3/">3</a><a class="page-number" href="/default-index/page/4/">4</a><a class="extend next" rel="next" href="/default-index/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/default-index/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/default-index/">1</a><span class="page-number current">2</span><a class="page-number" href="/default-index/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/default-index/page/5/">5</a><a class="extend next" rel="next" href="/default-index/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1250,14 +1247,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">40</span>
+          <span class="site-state-item-count">43</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
